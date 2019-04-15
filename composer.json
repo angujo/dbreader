@@ -10,7 +10,10 @@
     }
   ],
   "minimum-stability": "dev",
-  "require": {},
+  "require": {
+    "tightenco/collect": "dev-master",
+    "ext-pdo": "*"
+  },
   "autoload": {
     "psr-4": {
       "Angujo\\DBReader\\": "src/"
