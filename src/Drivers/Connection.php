@@ -4,15 +4,17 @@
 namespace Angujo\DBReader\Drivers;
 
 
+use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
 use Angujo\DBReader\Models\DBTable;
+use Symfony\Component\VarDumper\Cloner\Data;
 use Tightenco\Collect\Support\Collection;
 
 /**
  * Class Connection
  * @package Angujo\DBReader\Drivers
  *
- * @method static Collection| getDatabases();
+ * @method static Database|null currentDatabase();
  * @method static Collection|DBTable[] getTables($db_name);
  * @method static Collection|DBColumn[] getColumns($db_name, $table_name);
  */

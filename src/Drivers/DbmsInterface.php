@@ -12,15 +12,15 @@ use Tightenco\Collect\Support\Collection;
 interface DbmsInterface
 {
     /**
-     * @return Collection|Database[]
+     * @return Database
      */
-    public function getDatabases();
+    public function currentDatabase();
 
     /**
-     * @param string|Database $db_name
+     * @param string|Database $db
      * @return DBTable[]|Collection
      */
-    public function getTables($db_name);
+    public function getTables($db);
 
     /**
      * @param string|Database $db_name
