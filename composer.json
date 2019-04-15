@@ -1,0 +1,14 @@
+{
+    "name": "angujo/dbreader",
+    "description": "A database interfacing library to provide an interface to the DB structure",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "angujo",
+            "email": "angujomondi@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
