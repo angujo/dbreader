@@ -33,10 +33,10 @@ class Config
 
     private function __construct()
     {
-        $this->params = collect($this->keys)->merge(collect(require('../config.php'))->filter(function ($val, $key) { return array_key_exists($key, $this->keys); }))
+        $this->params = collect($this->keys)->merge(collect(require(__DIR__ . '../../configs.php'))->filter(function ($val, $key) { return array_key_exists($key, $this->keys); }))
             ->map(function ($val, $key) {
                 if (0 === strcasecmp($key, 'options')) $val[\PDO::ATTR_DEFAULT_FETCH_MODE] = \PDO::FETCH_ASSOC;
-                if (0 === strcasecmp('dbms', $key) && !in_array($key, ['mysql', 'postgres'])) throw new ReaderException('Invalid Database Management System!');
+                if (0 === strcasecmp('dbms', $key) && !in_array($val, ['mysql', 'postgres'])) throw new ReaderException('Invalid Database Management System!');
                 return $val;
             });
     }

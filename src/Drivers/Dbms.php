@@ -4,11 +4,12 @@
 namespace Angujo\DBReader\Drivers;
 
 
-interface Dbms
+abstract class Dbms implements DbmsInterface
 {
-    public function getDatabases();
+    protected $connection;
 
-    public function getTables($db_name);
-
-    public function getColumns($db_name, $table_name);
+    public function __construct(\PDO $connection)
+    {
+        $this->connection = $connection;
+    }
 }
