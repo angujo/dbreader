@@ -4,7 +4,7 @@
 namespace Angujo\DBReader\Models;
 
 
-class DBColumn
+class DBColumn extends PropertyReader
 {
 
 }
