@@ -14,30 +14,32 @@ use Tightenco\Collect\Support\Collection;
  * @property string $name;
  * @property DBTable[]|Collection $tables;
  */
-class Database
+class Database extends PropertyReader
 {
-    private $values = [];
+    /**
+     * @var static[]
+     */
+    private static $me = [];
 
     public function __construct($name)
     {
-        $this->values['name'] = $name;
+        $this->attributes['name'] = $name;
+        parent::__construct(['name' => $name]);
+        self::$me[$name] = $this;
     }
 
-    private function tables()
+    protected function tables()
     {
-        if (!empty($this->values['tables'])) return $this->values['tables'];
-        return $this->values['tables'] = Connection::getTables($this);
+        if (!empty($this->attributes['tables'])) return $this->attributes['tables'];
+        return $this->attributes['tables'] = Connection::getTables($this);
     }
 
-    public function __get($name)
+    /**
+     * @param $name
+     * @return Database
+     */
+    public static function get($name)
     {
-        if (method_exists($this, $name)) return $this->{$name}();
-        if (isset($this->values[$name])) return $this->values[$name];
-        throw new ReaderException('Invalid Database property!');
-    }
-
-    public function __isset($name)
-    {
-        return method_exists($this, $name) || isset($this->values[$name]);
+        return isset(self::$me[$name]) ? self::$me[$name] : new self($name);
     }
 }

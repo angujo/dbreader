@@ -3,7 +3,9 @@
 namespace Angujo\DBReader\Models;
 
 
+use Angujo\DBReader\Drivers\Connection;
 use Angujo\DBReader\Drivers\ReaderException;
+use Tightenco\Collect\Support\Collection;
 
 /**
  * Class DBTable
@@ -18,16 +20,31 @@ use Angujo\DBReader\Drivers\ReaderException;
  * @property integer $auto_increment;
  * @property boolean $is_table;
  * @property boolean $is_view;
+ *
+ * @property Database $database
+ * @property ForeignKey[]|Collection $foreign_keys_one_to_one
+ * @property ForeignKey[]|Collection $foreign_keys_one_to_many
  */
-class DBTable
+class DBTable extends PropertyReader
 {
-    private $details = [];
-    private $database;
-
-    public function __construct(Database $db, array $details)
+    public function __construct(array $details)
     {
-        $this->database = $db;
-        $this->details = $details;
+        parent::__construct($details);
+    }
+
+    protected function database()
+    {
+        return $this->attributes['database']= isset($this->attributes['database']) ? $this->attributes['database'] : Database::get($this->schema_name);
+    }
+
+    protected function foreign_keys_one_to_one()
+    {
+        return $this->attributes['one_to_one'] = isset($this->attributes['one_to_one']) ? $this->attributes['one_to_one'] : Connection::getReferencedForeignKeys($this->schema_name, $this->name);
+    }
+
+    protected function foreign_keys_one_to_many()
+    {
+        return $this->attributes['one_to_many'] = isset($this->attributes['one_to_many']) ? $this->attributes['one_to_many'] : Connection::getReferencingForeignKeys($this->schema_name, $this->name);
     }
 
     protected function schema_name()
@@ -73,32 +90,5 @@ class DBTable
     protected function is_view()
     {
         return 0 === strcasecmp('view', $this->getDetail('table_type'));
-    }
-
-    protected function getDetail($column_name)
-    {
-        return isset($this->details[$column_name]) ? $this->details[$column_name] : null;
-    }
-
-    /**
-     * @param $name
-     * @return mixed
-     * @throws ReaderException
-     */
-    public function __get($name)
-    {
-        if (method_exists($this, $name)) return $this->{$name}();
-        if (isset($this->details[$name])) return $this->details[$name];
-        throw new ReaderException('Invalid Table property!');
-    }
-
-    public function __isset($name)
-    {
-        return method_exists($this, $name) || isset($this->values[$name]);
-    }
-
-    public function __set($name)
-    {
-        throw new ReaderException('Not allowed! Cannot assign READ_ONLY attribute!');
     }
 }

@@ -7,6 +7,7 @@ namespace Angujo\DBReader\Drivers;
 use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
 use Angujo\DBReader\Models\DBTable;
+use Angujo\DBReader\Models\ForeignKey;
 use Symfony\Component\VarDumper\Cloner\Data;
 use Tightenco\Collect\Support\Collection;
 
@@ -17,6 +18,8 @@ use Tightenco\Collect\Support\Collection;
  * @method static Database|null currentDatabase();
  * @method static Collection|DBTable[] getTables($db_name);
  * @method static Collection|DBColumn[] getColumns($db_name, $table_name);
+ * @method static Collection|ForeignKey[] getReferencedForeignKeys($db_name, $table_name);
+ * @method static Collection|ForeignKey[] getReferencingForeignKeys($db_name, $table_name);
  */
 class Connection
 {

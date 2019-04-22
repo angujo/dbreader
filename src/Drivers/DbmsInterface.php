@@ -28,4 +28,24 @@ interface DbmsInterface
      * @return DBColumn[]|Collection
      */
     public function getColumns($db_name, $table_name);
+
+    /**
+     * Directly referenced Foreign Keys
+     * Result in OneToOne relationship with foreign table
+     *
+     * @param $db_name
+     * @param $table_name
+     * @return mixed
+     */
+    public function getReferencedForeignKeys($db_name, $table_name);
+
+    /**
+     * Foreign Keys referencing this column
+     * Results in OneToMany relationship with foreign tables
+     *
+     * @param $db_name
+     * @param $table_name
+     * @return mixed
+     */
+    public function getReferencingForeignKeys($db_name, $table_name);
 }
