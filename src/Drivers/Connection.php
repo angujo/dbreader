@@ -33,7 +33,7 @@ class Connection
     private function __construct()
     {
         if (!Config::getDsnString()) throw new ReaderException('Invalid DNS connection!');
-        $pdo = new \PDO(Config::getDsnString(), Config::username(), Config::password());
+        $pdo = new \PDO(Config::getDsnString(), Config::username(), Config::password(),Config::options());
 
         switch (Config::dbms()) {
             case 'mysql':

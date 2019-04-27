@@ -14,7 +14,7 @@ namespace Angujo\DBReader\Drivers;
  * @method static string database($db = null)
  * @method static string username($user = null)
  * @method static string password($pass = null)
- * @method static string options(array $opts = [])
+ * @method static array options(array $opts = [])
  */
 class Config
 {
@@ -35,7 +35,10 @@ class Config
     {
         $this->params = collect($this->keys)->merge(collect(require(__DIR__ . '../../configs.php'))->filter(function ($val, $key) { return array_key_exists($key, $this->keys); }))
             ->map(function ($val, $key) {
-                if (0 === strcasecmp($key, 'options')) $val[\PDO::ATTR_DEFAULT_FETCH_MODE] = \PDO::FETCH_ASSOC;
+                if (0 === strcasecmp($key, 'options')) {
+                    $val[\PDO::ATTR_DEFAULT_FETCH_MODE] = \PDO::FETCH_ASSOC;
+                    $val[\PDO::ATTR_STATEMENT_CLASS] = [DBRPDO_Statement::class, []];
+                }
                 if (0 === strcasecmp('dbms', $key) && !in_array($val, ['mysql', 'postgres'])) throw new ReaderException('Invalid Database Management System!');
                 return $val;
             });

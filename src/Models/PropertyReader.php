@@ -24,8 +24,8 @@ abstract class PropertyReader
     public function __get($name)
     {
         if (method_exists($this, $name)) return $this->{$name}();
-        if (isset($this->attributes[$name])) return $this->attributes[$name];
-        throw new ReaderException('Invalid property "'.$name.'" in ' . static::class . '!');
+        if (isset($this->attributes[$name]) || isset($this->attributes[strtoupper($name)])) return $this->getDetail($name);
+        throw new ReaderException('Invalid property "' . $name . '" in ' . static::class . '!');
     }
 
     public function __isset($name)
@@ -44,7 +44,7 @@ abstract class PropertyReader
 
     protected function getDetail($column_name)
     {
-        return isset($this->attributes[$column_name]) ? $this->attributes[$column_name] : null;
+        return isset($this->attributes[$column_name]) ? $this->attributes[$column_name] : (isset($this->attributes[strtoupper($column_name)]) ? $this->attributes[strtoupper($column_name)] : null);
     }
 
     /**
