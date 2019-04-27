@@ -17,7 +17,7 @@ use Tightenco\Collect\Support\Collection;
  *
  * @method static Database|null currentDatabase();
  * @method static Collection|DBTable[] getTables($db_name);
- * @method static Collection|DBColumn[] getColumns($db_name, $table_name);
+ * @method static Collection|DBColumn[] getColumns($db_name, $table_name=null);
  * @method static Collection|ForeignKey[] getReferencedForeignKeys($db_name, $table_name);
  * @method static Collection|ForeignKey[] getReferencingForeignKeys($db_name, $table_name);
  */

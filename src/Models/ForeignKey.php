@@ -14,7 +14,13 @@ namespace Angujo\DBReader\Models;
  * @property string foreign_table_schema
  * @property string foreign_table_name
  * @property string foreign_column_name
+ *
  * @property DBTable $table
+ * @property DBTable $foreign_table
+ * @property DBColumn $column
+ * @property DBColumn $foreign_column
+ * @property Database $database
+ * @property Database $foreign_database
  *
  */
 class ForeignKey extends PropertyReader
@@ -24,12 +30,36 @@ class ForeignKey extends PropertyReader
         parent::__construct($details);
     }
 
+    protected function database()
+    {
+        return Database::get($this->table_schema);
+    }
+
+    protected function foreign_database()
+    {
+        return Database::get($this->foreign_table_schema);
+    }
+
     /**
      * @return DBTable
      */
     protected function table()
     {
-        if (isset($this->attributes['table'])) return $this->attributes['table'];
-        return $this->attributes['table'] = Database::get($this->table_schema)->tables->first(function (DBTable $table) { return 0 === strcasecmp($this->table_name, $table->name); });
+        return Database::getTable($this->table_schema, $this->table_name);
+    }
+
+    protected function foreign_table()
+    {
+        return Database::getTable($this->foreign_table_schema, $this->foreign_table_name);
+    }
+
+    protected function column()
+    {
+        return Database::getColumn($this->table_schema, $this->table_name, $this->column_name);
+    }
+
+    protected function foreign_column()
+    {
+        return Database::getColumn($this->foreign_table_schema, $this->foreign_table_name, $this->foreign_column_name);
     }
 }

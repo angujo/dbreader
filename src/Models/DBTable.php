@@ -24,6 +24,7 @@ use Tightenco\Collect\Support\Collection;
  * @property Database $database
  * @property ForeignKey[]|Collection $foreign_keys_one_to_one
  * @property ForeignKey[]|Collection $foreign_keys_one_to_many
+ * @property DBColumn[]|Collection $columns
  */
 class DBTable extends PropertyReader
 {
@@ -34,7 +35,7 @@ class DBTable extends PropertyReader
 
     protected function database()
     {
-        return $this->attributes['database']= isset($this->attributes['database']) ? $this->attributes['database'] : Database::get($this->schema_name);
+        return Database::get($this->schema_name);
     }
 
     protected function foreign_keys_one_to_one()
@@ -45,6 +46,11 @@ class DBTable extends PropertyReader
     protected function foreign_keys_one_to_many()
     {
         return $this->attributes['one_to_many'] = isset($this->attributes['one_to_many']) ? $this->attributes['one_to_many'] : Connection::getReferencingForeignKeys($this->schema_name, $this->name);
+    }
+
+    protected function columns()
+    {
+        return Database::getColumns($this->schema_name, $this->name);
     }
 
     protected function schema_name()
