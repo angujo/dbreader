@@ -6,14 +6,16 @@ namespace Angujo\DBReader\Models;
 
 use Angujo\DBReader\Drivers\Helper;
 use Angujo\DBReader\Drivers\ReaderException;
+use Tightenco\Collect\Contracts\Support\Arrayable;
+use Tightenco\Collect\Support\Collection;
 
-abstract class PropertyReader
+abstract class PropertyReader implements Arrayable
 {
     protected $attributes = [];
 
     protected function __construct(array $details)
     {
-        $this->attributes = $details;
+        $this->attributes = array_change_key_case($details, CASE_LOWER);
     }
 
     /**
@@ -23,8 +25,8 @@ abstract class PropertyReader
      */
     public function __get($name)
     {
+        if (array_key_exists(strtolower($name), $this->attributes)) return $this->getDetail($name);
         if (method_exists($this, $name)) return $this->{$name}();
-        if (isset($this->attributes[$name]) || isset($this->attributes[strtoupper($name)])) return $this->getDetail($name);
         throw new ReaderException('Invalid property "' . $name . '" in ' . static::class . '!');
     }
 
@@ -44,7 +46,7 @@ abstract class PropertyReader
 
     protected function getDetail($column_name)
     {
-        return isset($this->attributes[$column_name]) ? $this->attributes[$column_name] : (isset($this->attributes[strtoupper($column_name)]) ? $this->attributes[strtoupper($column_name)] : null);
+        return array_key_exists(strtolower($column_name), $this->attributes) ? $this->attributes[$column_name] : null;
     }
 
     /**
@@ -54,13 +56,42 @@ abstract class PropertyReader
     public function with(...$params)
     {
         if (empty($params)) return $this;
-        if (1 === count($params) && !is_array($params[0])) $params = [$params[0]];
+        $res = [];
         $elements = Helper::array_flatten($params);
         foreach ($elements as $element) {
             $elmts = explode('.', $element);
             $relt = array_shift($elmts);
-            if ($this->{$relt} && !empty($elmts) && is_object($this->{$relt}) && is_a($this->{$relt}, PropertyReader::class)) $this->{$relt}->with(implode('.', $elmts));
+            $elmts = implode('.', $elmts);
+            if (array_key_exists($relt, $res)) {
+                $res[$relt][] = $elmts;
+            } else $res[$relt] = [$elmts];
+        }
+        $res = array_map(function ($av) { return array_filter(array_unique($av)); }, $res);
+        foreach ($res as $key => $re) {
+            $this->attributes[$key] = $this->implementWith($this->{$key}, $re);
         }
         return $this;
+    }
+
+    /**
+     * @param Collection|PropertyReader|array $object
+     * @param string $param
+     * @return mixed
+     */
+    private function implementWith($object, $param = null)
+    {
+        if (!$param) return $object;
+        if (is_object($object)) {
+            if (is_a($object, PropertyReader::class)) return $object->with($param);
+            elseif (is_a($object, Collection::class)) return $object->map(function ($obj) use ($param) { return $this->implementWith($obj, $param); });
+        } elseif (is_array($object)) {
+            return array_map(function ($val) use ($param) { return $this->implementWith($val, $param); }, $object);
+        }
+        return $object;
+    }
+
+    public function toArray()
+    {
+        return $this->attributes;
     }
 }

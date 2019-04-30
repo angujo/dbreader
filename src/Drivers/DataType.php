@@ -160,23 +160,20 @@ class DataType
             case 'mediumint':
                 return 'int';
             case 'int4':
+            case 'serial':
+            case 'serial4':
             case 'smallint':
                 return 'smallint';
             case 'int2':
             case 'tinyint':
+            case 'smallserial':
+            case 'serial2':
                 return 'tinyint';
             case 'bigint':
             case 'int8':
-                return 'bigint';
-            case 'smallserial':
-            case 'serial2':
-                return 'smallserial';
-            case 'serial':
-            case 'serial4':
-                return 'serial';
             case 'bigserial':
             case 'serial8':
-                return 'bigserial';
+                return 'bigint';
             case 'timestamp':
             case 'datetime':
             case 'timestamptz':
