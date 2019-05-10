@@ -57,7 +57,7 @@ class MySQL extends Dbms
     protected function mapColumns(array $data)
     {
         $_data = $data;
-        $_data['data_type'] = [];
+        $_data['_data_type'] = [];
         foreach ($data as $name => $datum) {
             if (0 === strcasecmp('table_schema', $name)) {
                 $_data['schema_name'] = $datum;
@@ -70,7 +70,7 @@ class MySQL extends Dbms
             } elseif (0 === strcasecmp('column_comment', $name)) {
                 $_data['comment'] = $datum;
             } elseif (0 === strcasecmp('data_type', $name) || 0 === strcasecmp('column_type', $name)) {
-                $_data['data_type'][] = $datum;
+                $_data['_data_type'][] = $datum;
             } elseif (0 === strcasecmp('numeric_scale', $name)) {
                 $_data['decimal_places'] = $datum;
             } elseif (0 === strcasecmp('column_key', $name)) {
@@ -79,6 +79,7 @@ class MySQL extends Dbms
                 $_data['is_auto_increment'] = false !== stripos($datum, 'auto_increment');
             }
         }
+        unset($_data['data_type']);
         return $_data;
     }
 

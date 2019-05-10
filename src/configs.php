@@ -1,20 +1,20 @@
 <?php
 return [
-
+/*
     'dbms' => 'mysql',
     'host' => 'localhost',
     'port' => '3306',
     'database' => 'test',
     'username' => 'root',
-    'password' => 'root',
+    'password' => 'root',*/
 
-/*
+
     'dbms' => 'postgres',
-    'host' => 'keklf-pgrsql01',
-    'port' => '5433',
-    'database' => 'coast',
+    'host' => 'localhost',
+    'port' => '5434',
+    'database' => 'dvdrental',
     'username' => 'postgres',
-    'password' => 'PostG31xPwd',*/
+    'password' => 'postgres',
 
     'charset' => 'utf8mb4',
     'options' => [],

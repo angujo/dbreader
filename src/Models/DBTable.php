@@ -40,12 +40,12 @@ class DBTable extends PropertyReader
 
     protected function foreign_keys_one_to_one()
     {
-        return $this->attributes['one_to_one'] = isset($this->attributes['one_to_one']) ? $this->attributes['one_to_one'] : Connection::getReferencedForeignKeys($this->schema_name, $this->name);
+        return Connection::getReferencedForeignKeys($this->schema_name, $this->name);
     }
 
     protected function foreign_keys_one_to_many()
     {
-        return $this->attributes['one_to_many'] = isset($this->attributes['one_to_many']) ? $this->attributes['one_to_many'] : Connection::getReferencingForeignKeys($this->schema_name, $this->name);
+        return Connection::getReferencingForeignKeys($this->schema_name, $this->name);
     }
 
     protected function columns()

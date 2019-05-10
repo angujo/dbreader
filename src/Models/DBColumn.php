@@ -59,7 +59,7 @@ class DBColumn extends PropertyReader
      */
     protected function data_type()
     {
-        return $this->attributes['data_type'] = isset($this->attributes['data_type']) && is_object($this->attributes['data_type']) ? $this->attributes['data_type'] : new DataType($this->attributes['data_type']);
+        return $this->attributes['data_type'] = isset($this->attributes['data_type']) && is_object($this->attributes['data_type']) ? $this->attributes['data_type'] : new DataType($this->attributes['_data_type']);
     }
 
 }

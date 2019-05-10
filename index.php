@@ -11,4 +11,7 @@ $db = Connection::currentDatabase();
     return $table->columns;
 })->all());*/
 
-print_r($db->tables->all());
+print_r(array_map(function (DBTable $table) {
+    $table->with(['columns']);
+    return $table->columns->map(function (\Angujo\DBReader\Models\DBColumn $column) { return $column->data_type; });
+}, $db->tables->all()));

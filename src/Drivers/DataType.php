@@ -143,6 +143,7 @@ class DataType
                 return 'bool';
             case 'character':
             case 'char':
+            case 'bpchar':
                 return 'char';
             case 'numeric':
             case 'decimal':
@@ -157,14 +158,14 @@ class DataType
                 return 'double';
             case 'integer':
             case 'int':
+            case 'int4':
             case 'mediumint':
                 return 'int';
-            case 'int4':
             case 'serial':
             case 'serial4':
+            case 'int2':
             case 'smallint':
                 return 'smallint';
-            case 'int2':
             case 'tinyint':
             case 'smallserial':
             case 'serial2':
@@ -185,6 +186,8 @@ class DataType
             case 'macaddr8':
                 return 'macaddr';
             case 'varchar':
+            case 'character varying':
+                return 'varchar';
             case 'varbit':
             case 'bit':
             case 'box':
