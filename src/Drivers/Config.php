@@ -93,7 +93,7 @@ class Config
         if (!array_key_exists($method, self::$me->keys)) throw new ReaderException('Invalid configuration method!');
         if (!empty($args)) {
             self::$me->params->transform(function ($val, $key) use ($method, $args) {
-                if (0 === strcasecmp($key, 'options')) {
+                if (0 === strcasecmp($key, 'options') && 0 === strcasecmp($key, $method)) {
                     if (!is_array($args[0])) throw new ReaderException('Options parameter should be array!');
                     $val = array_merge($val, $args[0]);
                 } elseif (0 === strcasecmp($key, $method)) $val = $args[0];
