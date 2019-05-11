@@ -71,6 +71,10 @@ namespace Angujo\DBReader\Drivers;
  * @property bool $isDateTime
  * @property bool $isEnum
  * @property bool $isSet
+ * @property bool $isPhpinteger
+ * @property bool $isPhpboolean
+ * @property bool $isPhpfloat
+ * @property bool $isPhpstring
  */
 class DataType
 {
@@ -217,6 +221,14 @@ class DataType
             case 'enum':
             case 'set':
                 return strtolower(trim($type));
+            case 'phpinteger':
+                return $this->isInt || $this->isBigInt || $this->isTinyInt || $this->isSmallInt ? 'phpint' : '';
+            case 'phpboolean':
+                return $this->isBool ? 'phpbool' : '';
+            case 'phpfloat':
+                return $this->isDecimal || $this->isFloat || $this->isDouble ? 'phpdouble' : '';
+            case 'phpstring':
+                return !$this->isPhpboolean && !$this->isPhpfloat && !$this->isPhpinteger ? 'phpstring' : '';
         }
         return null;
     }

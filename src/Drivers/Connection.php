@@ -17,7 +17,7 @@ use Tightenco\Collect\Support\Collection;
  *
  * @method static Database|null currentDatabase();
  * @method static Collection|DBTable[] getTables($db_name);
- * @method static Collection|DBColumn[] getColumns($db_name, $table_name=null);
+ * @method static Collection|DBColumn[] getColumns($db_name, $table_name = null);
  * @method static Collection|ForeignKey[] getReferencedForeignKeys($db_name, $table_name);
  * @method static Collection|ForeignKey[] getReferencingForeignKeys($db_name, $table_name);
  */
@@ -30,12 +30,18 @@ class Connection
      * Connection constructor.
      * @throws ReaderException
      */
-    private function __construct()
+    private function __construct($skip = false)
     {
-        if (!Config::getDsnString()) throw new ReaderException('Invalid DNS connection!');
-        $pdo = new \PDO(Config::getDsnString(), Config::username(), Config::password(),Config::options());
+        if (!$skip) {
+            if (!Config::getDsnString()) throw new ReaderException('Invalid DNS connection!');
+            $this->dbms(new \PDO(Config::getDsnString(), Config::username(), Config::password(), Config::options()));
+        }
+    }
 
-        switch (Config::dbms()) {
+    private function dbms(\PDO $pdo, $dbms = null)
+    {
+        $dbms = $dbms ?: Config::dbms();
+        switch ($dbms) {
             case 'mysql':
                 $this->dbms = new MySQL($pdo);
                 break;
@@ -44,6 +50,11 @@ class Connection
                 $this->dbms = new PostgreSQL($pdo);
                 break;
         }
+    }
+
+    public static function setPDO(\PDO $PDO, $dbms = 'postgres')
+    {
+        (self::$me = self::$me ?: new self(true))->dbms($PDO, $dbms);
     }
 
     /**
