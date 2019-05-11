@@ -39,9 +39,46 @@ class Config
                     $val[\PDO::ATTR_DEFAULT_FETCH_MODE] = \PDO::FETCH_ASSOC;
                     $val[\PDO::ATTR_STATEMENT_CLASS] = [DBRPDO_Statement::class, []];
                 }
-                if (0 === strcasecmp('dbms', $key) && !in_array($val, ['mysql', 'postgres'])) throw new ReaderException('Invalid Database Management System!');
+                if (0 === strcasecmp('dbms', $key) && !in_array($val, ['mysql', 'postgres', 'pgsql'])) throw new ReaderException('Invalid Database Management System!');
                 return $val;
             });
+    }
+
+    /**
+     * @param $dns_string
+     * @param null $username
+     * @param null $password
+     * @throws ReaderException
+     */
+    public static function dsn($dns_string, $username = null, $password = null)
+    {
+        $dsn = explode(':', $dns_string);
+        if (count($dsn) < 2) throw new ReaderException('Invalid DNS String!');
+        self::dbms(array_shift($dsn));
+        $dsn = explode(';', implode(':', $dsn));
+        foreach ($dsn as $item) {
+            $items = explode('=', $item);
+            $name = array_shift($items);
+            $value = implode('=', $items);
+            if (0 === strcasecmp('host', $name) && count($h = explode(':', $value)) > 1) {
+                self::host(array_shift($h));
+                self::port(implode(':', $h));
+            } else {
+                forward_static_call(['Config', $name], $value);
+            }
+        }
+        if (null !== $username) self::username($username);
+        if (null !== $password) self::password($password);
+    }
+
+    public static function set($dbms, $host, $port, $database, $username, $password = null)
+    {
+        self::dbms($dbms);
+        self::host($host);
+        self::port($port);
+        self::database($database);
+        self::username($username);
+        self::password($password);
     }
 
     /**
