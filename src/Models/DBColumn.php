@@ -11,6 +11,7 @@ use Angujo\DBReader\Drivers\DataType;
  * @package Angujo\DBReader\Models
  *
  * @property string $schema_name
+ * @property string|string[] $data_type
  * @property string $table_name
  * @property string $name
  * @property int $ordinal_position
@@ -32,7 +33,7 @@ use Angujo\DBReader\Drivers\DataType;
  * @property boolean $is_auto_increment
  * @property int $decimal_places
  *
- * @property DataType $data_type
+ * @property DataType $type
  * @property DBTable $table
  * @property Database $database
  */
@@ -57,9 +58,9 @@ class DBColumn extends PropertyReader
      * @return DataType
      * @throws \Angujo\DBReader\Drivers\ReaderException
      */
-    protected function data_type()
+    protected function type()
     {
-        return $this->attributes['data_type'] = isset($this->attributes['data_type']) && is_object($this->attributes['data_type']) ? $this->attributes['data_type'] : new DataType($this->attributes['_data_type']);
+        return $this->attributes['type'] = isset($this->attributes['type']) ? $this->attributes['type'] : new DataType($this->attributes['data_type']);
     }
 
 }

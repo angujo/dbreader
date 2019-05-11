@@ -74,7 +74,7 @@ class PostgreSQL extends Dbms
     protected function mapColumns(array $data)
     {
         $_data = $data;
-        $_data['_data_type'] = [];
+        $_data['data_type'] = [];
         foreach ($data as $name => $datum) {
             if (0 === strcasecmp('table_schema', $name)) {
                 $_data['schema_name'] = $datum;
@@ -87,7 +87,7 @@ class PostgreSQL extends Dbms
             } elseif (0 === strcasecmp('column_comment', $name)) {
                 $_data['comment'] = $datum;
             } elseif (0 === strcasecmp('data_type', $name) || 0 === strcasecmp('udt_name', $name)) {
-                $_data['_data_type'][] = $datum;
+                $_data['data_type'][] = $datum;
             } elseif (0 === strcasecmp('numeric_scale', $name)) {
                 $_data['decimal_places'] = $datum;
             } elseif (0 === strcasecmp('constraint_type', $name)) {
@@ -99,7 +99,6 @@ class PostgreSQL extends Dbms
         }
         //TODO Query comment from table column
         $_data['comment'] = null;
-        unset($_data['data_type']);
         return $_data;
     }
 

@@ -103,6 +103,7 @@ class DataType
     public function __get($name)
     {
         if (0 !== stripos($name, 'is')) throw new ReaderException('Invalid data type query: ' . $name, 406);
+        if (0===stripos($name, 'isphp')) return $this->groupName($this->removeQuiz($name));
         return 0 === strcasecmp($this->groupName($this->removeQuiz($name)), $this->group);
     }
 
@@ -133,6 +134,15 @@ class DataType
     protected function extract($type)
     {
         return preg_replace("/(\((.*?)\))/", '', $type);
+    }
+
+    public function phpName()
+    {
+        if ($this->isPhpinteger) return 'integer';
+        if ($this->isPhpfloat) return 'float';
+        if ($this->isPhpboolean) return 'bool';
+        if ($this->isPhpstring) return 'string';
+        return 'mixed';
     }
 
     /**
@@ -222,13 +232,13 @@ class DataType
             case 'set':
                 return strtolower(trim($type));
             case 'phpinteger':
-                return $this->isInt || $this->isBigInt || $this->isTinyInt || $this->isSmallInt ? 'phpint' : '';
+                return $this->isInt || $this->isBigInt || $this->isTinyInt || $this->isSmallInt;
             case 'phpboolean':
                 return $this->isBool ? 'phpbool' : '';
             case 'phpfloat':
-                return $this->isDecimal || $this->isFloat || $this->isDouble ? 'phpdouble' : '';
+                return $this->isDecimal || $this->isFloat || $this->isDouble;
             case 'phpstring':
-                return !$this->isPhpboolean && !$this->isPhpfloat && !$this->isPhpinteger ? 'phpstring' : '';
+                return !$this->isPhpboolean && !$this->isPhpfloat && !$this->isPhpinteger ;
         }
         return null;
     }
