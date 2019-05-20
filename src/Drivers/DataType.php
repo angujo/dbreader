@@ -71,6 +71,7 @@ namespace Angujo\DBReader\Drivers;
  * @property bool $isDateTime
  * @property bool $isEnum
  * @property bool $isSet
+ *
  * @property bool $isPhpinteger
  * @property bool $isPhpboolean
  * @property bool $isPhpfloat
@@ -103,7 +104,7 @@ class DataType
     public function __get($name)
     {
         if (0 !== stripos($name, 'is')) throw new ReaderException('Invalid data type query: ' . $name, 406);
-        if (0===stripos($name, 'isphp')) return $this->groupName($this->removeQuiz($name));
+        if (0 === stripos($name, 'isphp')) return $this->groupName($this->removeQuiz($name));
         return 0 === strcasecmp($this->groupName($this->removeQuiz($name)), $this->group);
     }
 
@@ -138,11 +139,18 @@ class DataType
 
     public function phpName()
     {
+        //if ($this->isDateTime && class_exists('Carbon\Carbon')) return 'Carbon';
+        if ($this->isDateTime) return 'Carbon';
         if ($this->isPhpinteger) return 'integer';
         if ($this->isPhpfloat) return 'float';
         if ($this->isPhpboolean) return 'bool';
         if ($this->isPhpstring) return 'string';
         return 'mixed';
+    }
+
+    protected function genericTypes($type)
+    {
+
     }
 
     /**
@@ -238,7 +246,7 @@ class DataType
             case 'phpfloat':
                 return $this->isDecimal || $this->isFloat || $this->isDouble;
             case 'phpstring':
-                return !$this->isPhpboolean && !$this->isPhpfloat && !$this->isPhpinteger ;
+                return !$this->isPhpboolean && !$this->isPhpfloat && !$this->isPhpinteger;
         }
         return null;
     }
