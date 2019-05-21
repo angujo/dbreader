@@ -25,9 +25,26 @@ namespace Angujo\DBReader\Models;
  */
 class ForeignKey extends PropertyReader
 {
-    public function __construct($details)
+    /**
+     * Should only hold 1=One to one or 2=One to many
+     * @var null|int
+     */
+    public $relation = null;
+
+    public function __construct($details, $many = null)
     {
         parent::__construct($details);
+        $this->relation = true === $many ? 2 : (false === $many ? 1 : null);
+    }
+
+    public function isOneToOne()
+    {
+        return $this->relation === 1;
+    }
+
+    public function isOneToMany()
+    {
+        return $this->relation === 2;
     }
 
     protected function database()

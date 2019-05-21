@@ -34,22 +34,34 @@ class PostgreSQL extends Dbms
         return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) use ($db) { return new DBTable($details); });
     }
 
+    /**
+     * One to one
+     * @param $db_name
+     * @param $table_name
+     * @return \Illuminate\Support\Collection|mixed|Collection
+     */
     public function getReferencedForeignKeys($db_name, $table_name)
     {
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('SELECT tc.table_schema, tc.constraint_name "name", tc.table_name, kcu.column_name, ccu.table_schema AS foreign_table_schema, ccu.table_name AS foreign_table_name, ccu.column_name AS foreign_column_name, tc.constraint_type FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = \'FOREIGN KEY\' AND tc.table_schema=:ts AND tc.table_name=:tn union select ccu.table_schema, tc.constraint_name "name", ccu.table_name, ccu.column_name, tc.table_schema AS foreign_table_schema, tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, tc.constraint_type FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema join (select kcu.table_catalog,kcu.table_schema, kcu.column_name, kcu.table_name from information_schema.key_column_usage kcu join information_schema.table_constraints tc on tc.table_name=kcu.table_name and tc.constraint_name=kcu.constraint_name AND tc.table_schema = kcu.table_schema and tc.constraint_type=\'UNIQUE\') t on t.table_name=tc.table_name and t.table_catalog=tc.table_catalog and t.table_schema=tc.table_schema and t.column_name=kcu.column_name WHERE tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_schema=:ts AND ccu.table_name=:tn;');
         $stmt->execute([':ts' => $db_name, ':tn' => $table_name]);
         // echo $stmt->_debugQuery(true),"\n";
-        return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) { return new ForeignKey($details); });
+        return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) { return new ForeignKey($details,false); });
     }
 
+    /**
+     * one to many
+     * @param $db_name
+     * @param $table_name
+     * @return \Illuminate\Support\Collection|mixed|Collection
+     */
     public function getReferencingForeignKeys($db_name, $table_name)
     {
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('SELECT tc.table_schema AS foreign_table_schema, tc.constraint_name "name", tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, ccu.table_schema, ccu.table_name, ccu.column_name FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_schema=:ts AND ccu.table_name=:tn;');
         $stmt->execute([':ts' => $db_name, ':tn' => $table_name]);
         //echo $stmt->_debugQuery(true),"\n";
-        return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) { return new ForeignKey($details); });
+        return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) { return new ForeignKey($details,true); });
     }
 
     /**

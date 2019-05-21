@@ -13,5 +13,5 @@ $db = Connection::currentDatabase();
 
 print_r(array_map(function (DBTable $table) {
     //$table->with(['columns']);
-    return $table->columns->map(function (\Angujo\DBReader\Models\DBColumn $column) { return $column; });
+    return $table->foreign_keys_one_to_one->merge($table->foreign_keys_one_to_many)->map(function ( $column) { return $column; });
 }, $db->tables->all()));
