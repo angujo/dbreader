@@ -76,7 +76,7 @@ class Database extends PropertyReader
      */
     public static function getTable($schema_name, $table_name)
     {
-        return isset(self::get($schema_name)->attributes['tables'][$table_name]) ? self::get($schema_name)->attributes['tables'][$table_name] : null;
+        return self::get($schema_name)->tables->first(function (DBTable $table) use ($table_name) { return 0 === strcasecmp($table->name, $table_name); });
     }
 
     /**

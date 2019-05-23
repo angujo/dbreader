@@ -180,6 +180,7 @@ class DataType
                 return 'double';
             case 'integer':
             case 'int':
+            case 'int unsigned':
             case 'int4':
             case 'mediumint':
                 return 'int';
