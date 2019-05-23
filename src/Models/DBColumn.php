@@ -21,6 +21,8 @@ use Angujo\DBReader\Drivers\DataType;
  * @property null|int $character_octet_length
  * @property null|int $numeric_precision
  * @property null|int $numeric_scale
+ * @property int $precision
+ * @property int $scale
  * @property string $datetime_precision
  * @property string $charset
  * @property string $collation_name
@@ -52,6 +54,22 @@ class DBColumn extends PropertyReader
     public function table()
     {
         return Database::getTable($this->schema_name, $this->table_name);
+    }
+
+    private function numeric()
+    {
+        if (!preg_match('/(\()(\d+)(,)?(\d+)?(\))/', $this->column_type, $output_array)) return [0, 0];
+        return [isset($output_array[2]) && is_numeric($output_array[2]) ? $output_array[2] : 0, isset($output_array[4]) && is_numeric($output_array[4]) ? $output_array[4] : 0];
+    }
+
+    protected function precision()
+    {
+        return $this->numeric()[1];
+    }
+
+    protected function scale()
+    {
+        return $this->numeric()[0];
     }
 
     /**
