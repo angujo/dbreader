@@ -7,13 +7,14 @@ namespace Angujo\DBReader\Models;
  * Class ForeignKey
  * @package Angujo\DBReader\Models
  *
- * @property string table_schema
- * @property string name
- * @property string table_name
- * @property string column_name
- * @property string foreign_table_schema
- * @property string foreign_table_name
- * @property string foreign_column_name
+ * @property string $table_schema
+ * @property string $name
+ * @property string $table_name
+ * @property string $column_name
+ * @property string $foreign_table_schema
+ * @property string $foreign_table_name
+ * @property string $foreign_column_name
+ * @property bool $unique_colmn
  *
  * @property DBTable $table
  * @property DBTable $foreign_table

@@ -25,12 +25,18 @@ use Tightenco\Collect\Support\Collection;
  * @property ForeignKey[]|Collection $foreign_keys_one_to_one
  * @property ForeignKey[]|Collection $foreign_keys_one_to_many
  * @property DBColumn[]|Collection $columns
+ * @property DBColumn[]|Collection $primary_columns
  */
 class DBTable extends PropertyReader
 {
     public function __construct(array $details)
     {
         parent::__construct($details);
+    }
+
+    protected function primary_columns()
+    {
+        return $this->columns()->filter(function (DBColumn $column) { return $column->is_primary; });
     }
 
     protected function database()
