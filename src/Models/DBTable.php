@@ -4,7 +4,6 @@ namespace Angujo\DBReader\Models;
 
 
 use Angujo\DBReader\Drivers\Connection;
-use Angujo\DBReader\Drivers\ReaderException;
 use Tightenco\Collect\Support\Collection;
 
 /**
