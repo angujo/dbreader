@@ -13,6 +13,7 @@ use Tightenco\Collect\Support\Collection;
  *
  * @property string $schema_name;
  * @property string $name;
+ * @property string $query_name;
  * @property string $engine;
  * @property string $version;
  * @property string $row_format;
@@ -20,6 +21,7 @@ use Tightenco\Collect\Support\Collection;
  * @property integer $auto_increment;
  * @property boolean $is_table;
  * @property boolean $is_view;
+ * @property boolean $has_schema;
  *
  * @property Database $database
  * @property ForeignKey[]|Collection $foreign_keys_one_to_one
@@ -29,8 +31,9 @@ use Tightenco\Collect\Support\Collection;
  */
 class DBTable extends PropertyReader
 {
-    public function __construct(array $details)
+    public function __construct(array $details, $withSchema = false)
     {
+        $details['has_schema'] = (bool)$withSchema;
         parent::__construct($details);
     }
 
@@ -57,6 +60,11 @@ class DBTable extends PropertyReader
     protected function columns()
     {
         return Database::getColumns($this->schema_name, $this->name);
+    }
+
+    protected function query_name()
+    {
+        return $this->schema_name . '.' . $this->name;
     }
 
     protected function schema_name()

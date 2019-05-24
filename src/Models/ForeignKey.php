@@ -14,7 +14,7 @@ namespace Angujo\DBReader\Models;
  * @property string $foreign_table_schema
  * @property string $foreign_table_name
  * @property string $foreign_column_name
- * @property bool $unique_colmn
+ * @property bool $unique_column
  *
  * @property DBTable $table
  * @property DBTable $foreign_table

@@ -18,7 +18,7 @@ class PostgreSQL extends Dbms
      */
     public function getSchemas()
     {
-        // TODO: Implement getDatabases() method.
+        return collect();
     }
 
     /**
@@ -31,7 +31,7 @@ class PostgreSQL extends Dbms
         $stmt = $this->connection->prepare('select * from information_schema."tables" t where t.table_schema not in (\'information_schema\',\'pg_catalog\')');
         $stmt->execute();
         //echo $stmt->_debugQuery(true),"\n";
-        return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) use ($db) { return new DBTable($details); });
+        return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) use ($db) { return new DBTable($details,true); });
     }
 
     /**
@@ -43,7 +43,7 @@ class PostgreSQL extends Dbms
     public function getReferencedForeignKeys($db_name, $table_name)
     {
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare('SELECT tc.table_schema, tc.constraint_name "name", tc.table_name, kcu.column_name, ccu.table_schema AS foreign_table_schema, ccu.table_name AS foreign_table_name, ccu.column_name AS foreign_column_name, tc.constraint_type FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = \'FOREIGN KEY\' AND tc.table_schema=:ts AND tc.table_name=:tn union select ccu.table_schema, tc.constraint_name "name", ccu.table_name, ccu.column_name, tc.table_schema AS foreign_table_schema, tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, tc.constraint_type FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema join (select kcu.table_catalog,kcu.table_schema, kcu.column_name, kcu.table_name from information_schema.key_column_usage kcu join information_schema.table_constraints tc on tc.table_name=kcu.table_name and tc.constraint_name=kcu.constraint_name AND tc.table_schema = kcu.table_schema and tc.constraint_type=\'UNIQUE\') t on t.table_name=tc.table_name and t.table_catalog=tc.table_catalog and t.table_schema=tc.table_schema and t.column_name=kcu.column_name WHERE tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_schema=:ts AND ccu.table_name=:tn;');
+        $stmt = $this->connection->prepare('SELECT tc.table_schema, tc.constraint_name "name", tc.table_name, kcu.column_name, ccu.table_schema AS foreign_table_schema, ccu.table_name AS foreign_table_name, ccu.column_name AS foreign_column_name, false unique_column FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = \'FOREIGN KEY\' AND tc.table_schema=:ts AND tc.table_name=:tn union select ccu.table_schema, tc.constraint_name "name", ccu.table_name, ccu.column_name, tc.table_schema AS foreign_table_schema, tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, false unique_column FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema join (select kcu.table_catalog,kcu.table_schema, kcu.column_name, kcu.table_name from information_schema.key_column_usage kcu join information_schema.table_constraints tc on tc.table_name=kcu.table_name and tc.constraint_name=kcu.constraint_name AND tc.table_schema = kcu.table_schema and tc.constraint_type=\'UNIQUE\') t on t.table_name=tc.table_name and t.table_catalog=tc.table_catalog and t.table_schema=tc.table_schema and t.column_name=kcu.column_name WHERE tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_schema=:ts AND ccu.table_name=:tn;');
         $stmt->execute([':ts' => $db_name, ':tn' => $table_name]);
         // echo $stmt->_debugQuery(true),"\n";
         return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) { return new ForeignKey($details,false); });
@@ -71,7 +71,7 @@ class PostgreSQL extends Dbms
      */
     public function getColumns($db_name, $table_name = null)
     {
-        $query = 'select distinct c.table_name, c.table_schema, c.column_name, c.column_default,c.character_set_name,c.data_type,c.udt_name,c.numeric_scale, tc.constraint_type from information_schema.columns c left join information_schema.constraint_column_usage ccu on ccu.table_schema=c.table_schema and c.table_name=ccu.table_name and ccu.column_name=c.column_name left join information_schema.table_constraints tc on tc.table_schema=ccu.table_schema and ccu.table_name=tc.table_name and ccu.constraint_name=tc.constraint_name where c.table_schema not in (\'information_schema\',\'pg_catalog\')';
+        $query = 'select distinct c.is_nullable, c.table_name, c.table_schema, c.column_name, c.column_default,c.character_set_name,c.data_type,c.udt_name,c.numeric_scale, tc.constraint_type from information_schema.columns c left join information_schema.constraint_column_usage ccu on ccu.table_schema=c.table_schema and c.table_name=ccu.table_name and ccu.column_name=c.column_name left join information_schema.table_constraints tc on tc.table_schema=ccu.table_schema and ccu.table_name=tc.table_name and ccu.constraint_name=tc.constraint_name where c.table_schema not in (\'information_schema\',\'pg_catalog\')';
         /** @var DBRPDO_Statement $stmt */
         if (null === $table_name || !is_string($table_name)) {
             $stmt = $this->connection->prepare($query . ' AND c.TABLE_SCHEMA=:ts;');
@@ -80,6 +80,7 @@ class PostgreSQL extends Dbms
             $stmt = $this->connection->prepare($query . ' and c.TABLE_NAME = :tn;');
             $stmt->execute(['ts' => $db_name, 'tn' => $table_name]);
         }
+        // echo $stmt->_debugQuery(true),"\n";
         return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) { return new DBColumn($this->mapColumns($details)); });
     }
 
@@ -94,6 +95,7 @@ class PostgreSQL extends Dbms
                 $_data['name'] = $datum;
             } elseif (0 === strcasecmp('column_default', $name)) {
                 $_data['default'] = preg_match('/^(nextval\(\')/', $datum) ? null : $datum;
+                $_data['is_auto_increment'] = preg_match('/^(nextval\(\')/', $datum) ? null : $datum;
             } elseif (0 === strcasecmp('character_set_name', $name)) {
                 $_data['charset'] = $datum;
             } elseif (0 === strcasecmp('column_comment', $name)) {
