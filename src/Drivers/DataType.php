@@ -80,7 +80,7 @@ namespace Angujo\DBReader\Drivers;
 class DataType
 {
     protected $type_names = [];
-    protected $group = null;
+    protected $group      = null;
 
     /**
      * DataType constructor.
@@ -159,7 +159,10 @@ class DataType
      */
     protected function groupName($type)
     {
-        switch (strtolower(trim($type))) {
+        $type = explode(' ', strtolower(trim($type)));
+        if (count($type) == 2 && 0 === strcasecmp('unsigned', $type[1])) $type = [$type[0]];
+        $type = implode(' ', $type);
+        switch ($type) {
             case 'boolean':
             case 'bool':
                 return 'bool';
@@ -170,6 +173,7 @@ class DataType
             case 'numeric':
             case 'decimal':
             case 'money':
+            case 'decimal unsigned':
                 return 'decimal';
             case 'real':
             case 'float4':

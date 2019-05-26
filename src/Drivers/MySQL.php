@@ -21,7 +21,7 @@ class MySQL extends Dbms
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('SELECT * FROM information_schema.TABLES t WHERE t.TABLE_SCHEMA= :db');
         $stmt->execute(['db' => $db->name]);
-        return array_map(function ($details) use ($db) { return new DBTable($details); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return array_map(function ($details) use ($db) { return new DBTable($details); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
@@ -33,10 +33,12 @@ class MySQL extends Dbms
     public function getReferencedForeignKeys($db_name, $table_name)
     {
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare('select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA, cu.TABLE_NAME, cu.COLUMN_NAME, cu.REFERENCED_TABLE_SCHEMA foreign_table_schema, cu.REFERENCED_TABLE_NAME foreign_table_name, cu.REFERENCED_COLUMN_NAME foreign_column_name, false unique_column from information_schema.KEY_COLUMN_USAGE cu where cu.TABLE_SCHEMA=:ts and cu.TABLE_NAME=:tn and cu.REFERENCED_TABLE_NAME is not null union select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA foreign_table_schema, cu.TABLE_NAME foreign_table_name, cu.COLUMN_NAME foreign_column_name, cu.REFERENCED_TABLE_SCHEMA table_schema, cu.REFERENCED_TABLE_NAME table_name, cu.REFERENCED_COLUMN_NAME column_name, true unique_column from information_schema.KEY_COLUMN_USAGE cu join information_schema.`COLUMNS` c on c.COLUMN_KEY=\'UNI\' and c.TABLE_NAME=cu.TABLE_NAME and c.TABLE_SCHEMA=cu.TABLE_SCHEMA and c.COLUMN_NAME=cu.COLUMN_NAME where cu.TABLE_SCHEMA=:ts and cu.REFERENCED_TABLE_NAME=:tn;');
-        $stmt->execute(['ts' => $db_name, 'tn' => $table_name]);
+        $stmt = $this->connection->prepare('select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA, cu.TABLE_NAME, cu.COLUMN_NAME, cu.REFERENCED_TABLE_SCHEMA foreign_table_schema, cu.REFERENCED_TABLE_NAME foreign_table_name, cu.REFERENCED_COLUMN_NAME foreign_column_name, false unique_column from information_schema.KEY_COLUMN_USAGE cu where cu.TABLE_SCHEMA=? and cu.TABLE_NAME=? and cu.REFERENCED_TABLE_NAME is not null');
+        $stmt->execute([$db_name, $table_name]);
+        $ustmt = $this->connection->prepare('select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA foreign_table_schema, cu.TABLE_NAME foreign_table_name, cu.COLUMN_NAME foreign_column_name, cu.REFERENCED_TABLE_SCHEMA table_schema, cu.REFERENCED_TABLE_NAME table_name, cu.REFERENCED_COLUMN_NAME column_name, true unique_column from information_schema.KEY_COLUMN_USAGE cu join information_schema.`COLUMNS` c on c.COLUMN_KEY=\'UNI\' and c.TABLE_NAME=cu.TABLE_NAME and c.TABLE_SCHEMA=cu.TABLE_SCHEMA and c.COLUMN_NAME=cu.COLUMN_NAME where cu.TABLE_SCHEMA=:ts and cu.REFERENCED_TABLE_NAME=:tn;');
+        $ustmt->execute(['ts' => $db_name, 'tn' => $table_name]);
         // echo $stmt->_debugQuery(true),"\n";
-        return array_map(function ($details)  { return new ForeignKey($details,false); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return array_map(function ($details) { return new ForeignKey($details, false); }, array_merge($ustmt->fetchAll(\PDO::FETCH_ASSOC), $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
     /**
@@ -48,15 +50,15 @@ class MySQL extends Dbms
     public function getReferencingForeignKeys($db_name, $table_name)
     {
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare('select false, unique_column, cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA foreign_table_schema, cu.TABLE_NAME foreign_table_name, cu.COLUMN_NAME foreign_column_name, cu.REFERENCED_TABLE_SCHEMA table_schema, cu.REFERENCED_TABLE_NAME table_name, cu.REFERENCED_COLUMN_NAME column_name from information_schema.KEY_COLUMN_USAGE cu JOIN information_schema.COLUMNS c ON c.COLUMN_KEY <> \'UNI\' and c.TABLE_NAME=cu.TABLE_NAME and c.TABLE_SCHEMA=cu.TABLE_SCHEMA and c.COLUMN_NAME=cu.REFERENCED_COLUMN_NAME where cu.REFERENCED_TABLE_SCHEMA=:ts and cu.REFERENCED_TABLE_NAME = :tn;');
+        $stmt = $this->connection->prepare('select false unique_column, cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA foreign_table_schema, cu.TABLE_NAME foreign_table_name, cu.COLUMN_NAME foreign_column_name, cu.REFERENCED_TABLE_SCHEMA table_schema, cu.REFERENCED_TABLE_NAME table_name, cu.REFERENCED_COLUMN_NAME column_name from information_schema.KEY_COLUMN_USAGE cu JOIN information_schema.COLUMNS c ON c.COLUMN_KEY <> \'UNI\' and c.TABLE_NAME=cu.TABLE_NAME and c.TABLE_SCHEMA=cu.TABLE_SCHEMA and c.COLUMN_NAME=cu.REFERENCED_COLUMN_NAME where cu.REFERENCED_TABLE_SCHEMA=:ts and cu.REFERENCED_TABLE_NAME = :tn;');
         $stmt->execute(['ts' => $db_name, 'tn' => $table_name]);
         // echo $stmt->_debugQuery(true),"\n";
-        return array_map(function ($details) { return new ForeignKey($details,true); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return array_map(function ($details) { return new ForeignKey($details, true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
      * @param Database|string $db_name
-     * @param null $table_name
+     * @param null            $table_name
      * @return DBColumn[]
      */
     public function getColumns($db_name, $table_name = null)
@@ -69,12 +71,12 @@ class MySQL extends Dbms
             $stmt = $this->connection->prepare('select * from information_schema.`COLUMNS` c where c.TABLE_SCHEMA=:ts and c.TABLE_NAME = :tn;');
             $stmt->execute(['ts' => $db_name, 'tn' => $table_name]);
         }
-        return array_map(function ($details) { return new DBColumn($this->mapColumns($details)); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return array_map(function ($details) { return new DBColumn($this->mapColumns($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     protected function mapColumns(array $data)
     {
-        $_data = $data;
+        $_data              = $data;
         $_data['data_type'] = [];
         foreach ($data as $name => $datum) {
             if (0 === strcasecmp('table_schema', $name)) {
@@ -83,6 +85,9 @@ class MySQL extends Dbms
                 $_data['name'] = $datum;
             } elseif (0 === strcasecmp('column_default', $name)) {
                 $_data['default'] = $datum;
+                if (0 === strcasecmp('null', $datum)) {
+                    $_data['default'] = $data['column_default'] = null;
+                }
             } elseif (0 === strcasecmp('character_set_name', $name)) {
                 $_data['charset'] = $datum;
             } elseif (0 === strcasecmp('column_comment', $name)) {
@@ -105,7 +110,9 @@ class MySQL extends Dbms
      */
     public function currentDatabase()
     {
-        if ($this->current_db) return $this->current_db;
+        if ($this->current_db) {
+            return $this->current_db;
+        }
         return $this->current_db = new Database($this->connection->query('SELECT database();')->fetchColumn());
     }
 }
