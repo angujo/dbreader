@@ -176,6 +176,7 @@ class DataType
             case 'float':
                 return 'float';
             case 'double':
+            case 'double unsigned':
             case 'float8':
                 return 'double';
             case 'integer':
