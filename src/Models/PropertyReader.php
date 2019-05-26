@@ -6,9 +6,8 @@ namespace Angujo\DBReader\Models;
 
 use Angujo\DBReader\Drivers\Helper;
 use Angujo\DBReader\Drivers\ReaderException;
-use Tightenco\Collect\Contracts\Support\Arrayable;
 
-abstract class PropertyReader implements Arrayable
+abstract class PropertyReader
 {
     protected $attributes = [];
 

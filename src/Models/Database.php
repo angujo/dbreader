@@ -54,7 +54,7 @@ class Database extends PropertyReader
      */
     public static function getColumns($schema_name, $table_name)
     {
-        return array_filter(self::get($schema_name)->columns, function (DBColumn $column, $key) use ($table_name) { return 0 === stripos($key, $table_name . '.'); });
+        return array_filter(self::get($schema_name)->columns, function ($key) use ($table_name) { return 0 === stripos($key, $table_name . '.'); }, ARRAY_FILTER_USE_KEY);
     }
 
     /**

@@ -72,6 +72,11 @@ class DBColumn extends PropertyReader
         return $this->numeric()[0];
     }
 
+    protected function name()
+    {
+        return $this->attributes['column_name'];
+    }
+
     /**
      * @return DataType
      * @throws \Angujo\DBReader\Drivers\ReaderException

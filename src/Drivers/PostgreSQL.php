@@ -57,7 +57,7 @@ class PostgreSQL extends Dbms
     public function getReferencingForeignKeys($db_name, $table_name)
     {
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare('SELECT tc.table_schema AS foreign_table_schema, tc.constraint_name "name", tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, ccu.table_schema, ccu.table_name, ccu.column_name FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_schema=:ts AND ccu.table_name=:tn;');
+        $stmt = $this->connection->prepare('SELECT false unique_column, tc.table_schema AS foreign_table_schema, tc.constraint_name "name", tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, ccu.table_schema, ccu.table_name, ccu.column_name FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_schema=:ts AND ccu.table_name=:tn;');
         $stmt->execute([':ts' => $db_name, ':tn' => $table_name]);
         //echo $stmt->_debugQuery(true),"\n";
         return array_map(function ($details) { return new ForeignKey($details,true); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
@@ -80,7 +80,7 @@ class PostgreSQL extends Dbms
             $stmt->execute(['ts' => $db_name, 'tn' => $table_name]);
         }
         // echo $stmt->_debugQuery(true),"\n";
-        return array_map(function ($details) { return new DBColumn($details); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return array_map(function ($details) { return new DBColumn($this->mapColumns($details)); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     protected function mapColumns(array $data)
