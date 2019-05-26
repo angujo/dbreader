@@ -13,5 +13,5 @@ $db = Connection::currentDatabase();
 
 print_r(array_map(function (DBTable $table) {
     //$table->with(['columns']);
-    return $table->foreign_keys_one_to_one->merge($table->foreign_keys_one_to_many)->map(function ( $column) { return $column; });
-}, $db->tables->all()));
+    return array_map(function ( $column) { return $column; },array_merge($table->foreign_keys_one_to_one,$table->foreign_keys_one_to_many));
+}, $db->tables));

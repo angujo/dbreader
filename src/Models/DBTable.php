@@ -4,7 +4,6 @@ namespace Angujo\DBReader\Models;
 
 
 use Angujo\DBReader\Drivers\Connection;
-use Tightenco\Collect\Support\Collection;
 
 /**
  * Class DBTable
@@ -23,10 +22,10 @@ use Tightenco\Collect\Support\Collection;
  * @property boolean $has_schema;
  *
  * @property Database $database
- * @property ForeignKey[]|Collection $foreign_keys_one_to_one
- * @property ForeignKey[]|Collection $foreign_keys_one_to_many
- * @property DBColumn[]|Collection $columns
- * @property DBColumn[]|Collection $primary_columns
+ * @property ForeignKey[] $foreign_keys_one_to_one
+ * @property ForeignKey[] $foreign_keys_one_to_many
+ * @property DBColumn[] $columns
+ * @property DBColumn[] $primary_columns
  */
 class DBTable extends PropertyReader
 {
@@ -38,7 +37,7 @@ class DBTable extends PropertyReader
 
     protected function primary_columns()
     {
-        return $this->columns()->filter(function (DBColumn $column) { return $column->is_primary; });
+        return array_filter($this->columns(),function (DBColumn $column) { return $column->is_primary; });
     }
 
     protected function database()

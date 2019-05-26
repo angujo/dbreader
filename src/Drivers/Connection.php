@@ -8,17 +8,16 @@ use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
-use Tightenco\Collect\Support\Collection;
 
 /**
  * Class Connection
  * @package Angujo\DBReader\Drivers
  *
  * @method static Database|null currentDatabase();
- * @method static Collection|DBTable[] getTables($db_name);
- * @method static Collection|DBColumn[] getColumns($db_name, $table_name = null);
- * @method static Collection|ForeignKey[] getReferencedForeignKeys($db_name, $table_name);
- * @method static Collection|ForeignKey[] getReferencingForeignKeys($db_name, $table_name);
+ * @method static DBTable[] getTables($db_name);
+ * @method static DBColumn[] getColumns($db_name, $table_name = null);
+ * @method static ForeignKey[] getReferencedForeignKeys($db_name, $table_name);
+ * @method static ForeignKey[] getReferencingForeignKeys($db_name, $table_name);
  */
 class Connection
 {

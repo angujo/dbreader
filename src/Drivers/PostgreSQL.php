@@ -8,22 +8,21 @@ use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
-use Tightenco\Collect\Support\Collection;
 
 class PostgreSQL extends Dbms
 {
 
     /**
-     * @return Collection|Database[]
+     * @return Database[]
      */
     public function getSchemas()
     {
-        return collect();
+        return [];
     }
 
     /**
      * @param string|Database $db
-     * @return DBTable[]|Collection
+     * @return DBTable[]
      */
     public function getTables($db)
     {
@@ -31,14 +30,14 @@ class PostgreSQL extends Dbms
         $stmt = $this->connection->prepare('select * from information_schema."tables" t where t.table_schema not in (\'information_schema\',\'pg_catalog\')');
         $stmt->execute();
         //echo $stmt->_debugQuery(true),"\n";
-        return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) use ($db) { return new DBTable($details,true); });
+        return array_map(function ($details) { return new DBTable($details); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
      * One to one
      * @param $db_name
      * @param $table_name
-     * @return \Illuminate\Support\Collection|mixed|Collection
+     * @return ForeignKey[]
      */
     public function getReferencedForeignKeys($db_name, $table_name)
     {
@@ -46,14 +45,14 @@ class PostgreSQL extends Dbms
         $stmt = $this->connection->prepare('SELECT tc.table_schema, tc.constraint_name "name", tc.table_name, kcu.column_name, ccu.table_schema AS foreign_table_schema, ccu.table_name AS foreign_table_name, ccu.column_name AS foreign_column_name, false unique_column FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = \'FOREIGN KEY\' AND tc.table_schema=:ts AND tc.table_name=:tn union select ccu.table_schema, tc.constraint_name "name", ccu.table_name, ccu.column_name, tc.table_schema AS foreign_table_schema, tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, false unique_column FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema join (select kcu.table_catalog,kcu.table_schema, kcu.column_name, kcu.table_name from information_schema.key_column_usage kcu join information_schema.table_constraints tc on tc.table_name=kcu.table_name and tc.constraint_name=kcu.constraint_name AND tc.table_schema = kcu.table_schema and tc.constraint_type=\'UNIQUE\') t on t.table_name=tc.table_name and t.table_catalog=tc.table_catalog and t.table_schema=tc.table_schema and t.column_name=kcu.column_name WHERE tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_schema=:ts AND ccu.table_name=:tn;');
         $stmt->execute([':ts' => $db_name, ':tn' => $table_name]);
         // echo $stmt->_debugQuery(true),"\n";
-        return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) { return new ForeignKey($details,false); });
+        return array_map(function ($details) { return new ForeignKey($details,false); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
      * one to many
      * @param $db_name
      * @param $table_name
-     * @return \Illuminate\Support\Collection|mixed|Collection
+     * @return ForeignKey[]
      */
     public function getReferencingForeignKeys($db_name, $table_name)
     {
@@ -61,13 +60,13 @@ class PostgreSQL extends Dbms
         $stmt = $this->connection->prepare('SELECT tc.table_schema AS foreign_table_schema, tc.constraint_name "name", tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, ccu.table_schema, ccu.table_name, ccu.column_name FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_schema=:ts AND ccu.table_name=:tn;');
         $stmt->execute([':ts' => $db_name, ':tn' => $table_name]);
         //echo $stmt->_debugQuery(true),"\n";
-        return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) { return new ForeignKey($details,true); });
+        return array_map(function ($details) { return new ForeignKey($details,true); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
      * @param string|Database $db_name
      * @param string|DBTable $table_name
-     * @return DBColumn[]|Collection
+     * @return DBColumn[]
      */
     public function getColumns($db_name, $table_name = null)
     {
@@ -81,7 +80,7 @@ class PostgreSQL extends Dbms
             $stmt->execute(['ts' => $db_name, 'tn' => $table_name]);
         }
         // echo $stmt->_debugQuery(true),"\n";
-        return collect($stmt->fetchAll(\PDO::FETCH_ASSOC))->map(function ($details) { return new DBColumn($this->mapColumns($details)); });
+        return array_map(function ($details) { return new DBColumn($details); },$stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     protected function mapColumns(array $data)

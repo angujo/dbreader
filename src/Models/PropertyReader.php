@@ -7,7 +7,6 @@ namespace Angujo\DBReader\Models;
 use Angujo\DBReader\Drivers\Helper;
 use Angujo\DBReader\Drivers\ReaderException;
 use Tightenco\Collect\Contracts\Support\Arrayable;
-use Tightenco\Collect\Support\Collection;
 
 abstract class PropertyReader implements Arrayable
 {
@@ -74,16 +73,15 @@ abstract class PropertyReader implements Arrayable
     }
 
     /**
-     * @param Collection|PropertyReader|array $object
+     * @param PropertyReader|array $object
      * @param string $param
      * @return mixed
      */
     private function implementWith($object, $param = null)
     {
         if (!$param) return $object;
-        if (is_object($object)) {
-            if (is_a($object, PropertyReader::class)) return $object->with($param);
-            elseif (is_a($object, Collection::class)) return $object->map(function ($obj) use ($param) { return $this->implementWith($obj, $param); });
+        if (is_object($object) && is_a($object, PropertyReader::class)) {
+             return $object->with($param);
         } elseif (is_array($object)) {
             return array_map(function ($val) use ($param) { return $this->implementWith($val, $param); }, $object);
         }

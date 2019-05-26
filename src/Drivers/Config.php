@@ -23,7 +23,7 @@ class Config
      */
     private static $me;
     /**
-     * @var \Tightenco\Collect\Support\Collection|array
+     * @var array
      */
     private $params;
     /**
@@ -33,15 +33,20 @@ class Config
 
     private function __construct()
     {
-        $this->params = collect($this->keys)->merge(collect(require(__DIR__ . '../../configs.php'))->filter(function ($val, $key) { return array_key_exists($key, $this->keys); }))
-            ->map(function ($val, $key) {
-                if (0 === strcasecmp($key, 'options')) {
-                    $val[\PDO::ATTR_DEFAULT_FETCH_MODE] = \PDO::FETCH_ASSOC;
-                    $val[\PDO::ATTR_STATEMENT_CLASS] = [DBRPDO_Statement::class, []];
-                }
-                if (0 === strcasecmp('dbms', $key) && !in_array($val, ['mysql', 'postgres', 'pgsql'])) throw new ReaderException('Invalid Database Management System!');
-                return $val;
-            });
+        $uconfigs = require(__DIR__ . '../../configs.php');
+        $filters = array_filter(array_merge($this->keys, $uconfigs),
+            function ($key) {
+                return array_key_exists($key, $this->keys);
+            }, ARRAY_FILTER_USE_KEY);
+        array_walk($filters, function (&$val, $key) {
+            if (0 === strcasecmp($key, 'options')) {
+                $val[\PDO::ATTR_DEFAULT_FETCH_MODE] = \PDO::FETCH_ASSOC;
+                $val[\PDO::ATTR_STATEMENT_CLASS] = [DBRPDO_Statement::class, []];
+            }
+            if (0 === strcasecmp('dbms', $key) && !in_array($val, ['mysql', 'postgres', 'pgsql'])) throw new ReaderException('Invalid Database Management System!');
+            //  return $val;
+        });
+        $this->params = $filters;
     }
 
     /**
@@ -92,16 +97,15 @@ class Config
         self::$me = self::$me ?: new self();
         if (!array_key_exists($method, self::$me->keys)) throw new ReaderException('Invalid configuration method!');
         if (!empty($args)) {
-            self::$me->params->transform(function ($val, $key) use ($method, $args) {
+            self::$me->params = array_map(function ($val, $key) use ($method, $args) {
                 if (0 === strcasecmp($key, 'options') && 0 === strcasecmp($key, $method)) {
                     if (!is_array($args[0])) throw new ReaderException('Options parameter should be array!');
                     $val = array_merge($val, $args[0]);
                 } elseif (0 === strcasecmp($key, $method)) $val = $args[0];
                 return $val;
-            });
+            }, self::$me->params);
         }
-        if (!($val = self::$me->params->first(function ($v, $k) use ($method) { return 0 === strcasecmp($k, $method); }))) return null;
-        return $val;
+        return isset(self::$me->params[strtolower($method)]) ? self::$me->params[strtolower($method)] : null;
     }
 
     public static function getDsnString()
