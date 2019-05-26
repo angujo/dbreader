@@ -70,7 +70,7 @@ class PostgreSQL extends Dbms
      */
     public function getColumns($db_name, $table_name = null)
     {
-        $query = 'select c.is_nullable=\'YES\' is_nullable, c.table_name, c.table_schema, c.column_name, c.column_default,c.character_set_name,c.data_type,c.udt_name,c.numeric_scale, t.constraint_type from information_schema."columns" c left join (select tc.table_name,tc.table_schema,ccu.column_name,tc.constraint_type from information_schema.table_constraints tc join information_schema.constraint_column_usage ccu 	on ccu.constraint_name=tc.constraint_name and ccu.table_name=tc.table_name and ccu.table_schema=tc.table_schema and tc.constraint_type= \'PRIMARY KEY\') t on t.table_name=c.table_name and t.column_name=c.column_name and t.table_schema=c.table_schema where c.table_schema not in (\'information_schema\',\'pg_catalog\')';
+        $query = 'select c.is_nullable=\'YES\' is_nullable, c.table_name, c.table_schema, c.column_name, c.column_default,c.character_set_name,c.data_type,c.udt_name,c.numeric_scale, t.constraint_type,  s."increment"::double precision>0 is_auto_increment from information_schema."columns" c left join (select tc.table_name,tc.table_schema,ccu.column_name,tc.constraint_type  from information_schema.table_constraints tc join information_schema.constraint_column_usage ccu 	on ccu.constraint_name=tc.constraint_name and ccu.table_name=tc.table_name and ccu.table_schema=tc.table_schema and tc.constraint_type= \'PRIMARY KEY\') t on t.table_name=c.table_name and t.column_name=c.column_name and t.table_schema=c.table_schema left join information_schema."sequences" s on s.sequence_schema=c.table_schema and c.column_default ilike concat(\'nextval(\'\'\',s.sequence_name,\'\'\'::regclass)\') where c.table_schema not in (\'information_schema\',\'pg_catalog\')';
         $order = ' order by c.table_name,c.ordinal_position;';
         /** @var DBRPDO_Statement $stmt */
         if (null === $table_name || !is_string($table_name)) {
@@ -95,7 +95,6 @@ class PostgreSQL extends Dbms
                 $_data['name'] = $datum;
             } elseif (0 === strcasecmp('column_default', $name)) {
                 $_data['default']           = preg_match('/^(nextval\(\')/', $datum) ? null : $datum;
-                $_data['is_auto_increment'] = preg_match('/^(nextval\(\')/', $datum) ? null : $datum;
             } elseif (0 === strcasecmp('character_set_name', $name)) {
                 $_data['charset'] = $datum;
             } elseif (0 === strcasecmp('column_comment', $name)) {
@@ -107,9 +106,6 @@ class PostgreSQL extends Dbms
             } elseif (0 === strcasecmp('constraint_type', $name)) {
                 $_data['is_primary'] = 0 === strcasecmp('PRIMARY KEY', $datum);
             }
-        }
-        if (preg_match('/^(nextval\(\')/', $data['column_default'])) {
-            $_data['is_auto_increment'] = true;
         }
         //TODO Query comment from table column
         $_data['comment'] = null;
