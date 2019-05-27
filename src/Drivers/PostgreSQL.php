@@ -11,6 +11,7 @@ use Angujo\DBReader\Models\ForeignKey;
 
 class PostgreSQL extends Dbms
 {
+    protected $functions = ['now', 'nextval', 'currval', 'setval',];
 
     /**
      * @return Database[]
@@ -30,7 +31,7 @@ class PostgreSQL extends Dbms
         $stmt = $this->connection->prepare('select * from information_schema."tables" t where t.table_schema not in (\'information_schema\',\'pg_catalog\')');
         $stmt->execute();
         //echo $stmt->_debugQuery(true),"\n";
-        return array_map(function ($details) { return new DBTable($details); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return array_map(function ($details) { return new DBTable($details, true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
@@ -94,7 +95,7 @@ class PostgreSQL extends Dbms
             } elseif (0 === strcasecmp('column_name', $name)) {
                 $_data['name'] = $datum;
             } elseif (0 === strcasecmp('column_default', $name)) {
-                $_data['default']           = preg_match('/^(nextval\(\')/', $datum) ? null : $datum;
+                $_data['default'] = $this->isAFunction($datum) ? null : $datum;
             } elseif (0 === strcasecmp('character_set_name', $name)) {
                 $_data['charset'] = $datum;
             } elseif (0 === strcasecmp('column_comment', $name)) {
@@ -122,4 +123,11 @@ class PostgreSQL extends Dbms
         }
         return $this->current_db = new Database($this->connection->query('SELECT current_database();')->fetchColumn());
     }
+
+    public function isAFunction($name)
+    {
+        return in_array($name, ['current_timestamp']) || preg_match('/^(\w+)(\()(.*?)?(\))$/i', $name) || preg_match('/::/i',$name);
+    }
+
+
 }
