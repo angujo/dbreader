@@ -71,7 +71,14 @@ class PostgreSQL extends Dbms
      */
     public function getColumns($db_name, $table_name = null)
     {
-        $query = 'select c.is_nullable=\'YES\' is_nullable, c.table_name, c.table_schema, c.column_name, c.column_default,c.character_set_name,c.data_type,c.udt_name,c.numeric_scale, t.constraint_type,  s."increment"::double precision>0 is_auto_increment from information_schema."columns" c left join (select tc.table_name,tc.table_schema,ccu.column_name,tc.constraint_type  from information_schema.table_constraints tc join information_schema.constraint_column_usage ccu 	on ccu.constraint_name=tc.constraint_name and ccu.table_name=tc.table_name and ccu.table_schema=tc.table_schema and tc.constraint_type= \'PRIMARY KEY\') t on t.table_name=c.table_name and t.column_name=c.column_name and t.table_schema=c.table_schema left join information_schema."sequences" s on s.sequence_schema=c.table_schema and c.column_default ilike concat(\'nextval(\'\'\',s.sequence_name,\'\'\'::regclass)\') where c.table_schema not in (\'information_schema\',\'pg_catalog\')';
+        $query = 'select cmt."comment", c.is_nullable=\'YES\' is_nullable, c.table_name, c.table_schema, c.column_name, c.column_default,c.character_set_name,c.data_type,c.udt_name,c.numeric_scale, t.constraint_type,  '.
+            's."increment"::double precision>0 is_auto_increment from information_schema."columns" c left join (select tc.table_name,tc.table_schema,ccu.column_name,tc.constraint_type  '.
+            'from information_schema.table_constraints tc join information_schema.constraint_column_usage ccu on ccu.constraint_name=tc.constraint_name and ccu.table_name=tc.table_name and '.
+            'ccu.table_schema=tc.table_schema and tc.constraint_type= \'PRIMARY KEY\') t on t.table_name=c.table_name and t.column_name=c.column_name and t.table_schema=c.table_schema '.
+            'left join information_schema."sequences" s on s.sequence_schema=c.table_schema and c.column_default ilike concat(\'nextval(\'\'\',s.sequence_name,\'\'\'::regclass)\') '.
+            'left join (select n.nspname,t.relname,d.objsubid, d.description "comment" from pg_catalog.pg_class t JOIN pg_namespace n ON n.oid = t.relnamespace join pg_catalog.pg_description d on d.objoid=t.oid) cmt '.
+            'on c.table_schema=cmt.nspname and cmt.relname=c.table_name and c.ordinal_position=cmt.objsubid '.
+            'where c.table_schema not in (\'information_schema\',\'pg_catalog\')';
         $order = ' order by c.table_name,c.ordinal_position;';
         /** @var DBRPDO_Statement $stmt */
         if (null === $table_name || !is_string($table_name)) {
@@ -98,8 +105,6 @@ class PostgreSQL extends Dbms
                 $_data['default'] = $this->isAFunction($datum) ? null : $datum;
             } elseif (0 === strcasecmp('character_set_name', $name)) {
                 $_data['charset'] = $datum;
-            } elseif (0 === strcasecmp('column_comment', $name)) {
-                $_data['comment'] = $datum;
             } elseif (0 === strcasecmp('data_type', $name) || 0 === strcasecmp('udt_name', $name)) {
                 $_data['data_type'][] = $datum;
             } elseif (0 === strcasecmp('numeric_scale', $name)) {
@@ -108,8 +113,6 @@ class PostgreSQL extends Dbms
                 $_data['is_primary'] = 0 === strcasecmp('PRIMARY KEY', $datum);
             }
         }
-        //TODO Query comment from table column
-        $_data['comment'] = null;
         return $_data;
     }
 
