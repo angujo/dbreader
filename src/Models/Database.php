@@ -115,7 +115,7 @@ class Database extends PropertyReader
      */
     public static function getColumn($schema_name, $table_name, $column_name)
     {
-        $cols = array_filter(self::get($schema_name)->columns, function(DBColumn $column, $key) use ($table_name, $column_name){ return 0 === strcasecmp($key, $table_name.'.'.$column_name); });
+        $cols = array_filter(self::get($schema_name)->columns, function( $key) use ($table_name, $column_name){ return 0 === strcasecmp($key, $table_name.'.'.$column_name); },ARRAY_FILTER_USE_KEY);
         return !empty($cols) ? array_shift($cols) : null;
     }
 
