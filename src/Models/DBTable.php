@@ -7,25 +7,26 @@ use Angujo\DBReader\Drivers\Connection;
 
 /**
  * Class DBTable
+ *
  * @package Angujo\DBReader\Models
  *
- * @property string $schema_name;
- * @property string $name;
- * @property string $query_name;
- * @property string $engine;
- * @property string $version;
- * @property string $row_format;
- * @property integer $table_rows;
- * @property integer $auto_increment;
- * @property boolean $is_table;
- * @property boolean $is_view;
- * @property boolean $has_schema;
+ * @property string       $schema_name   ;
+ * @property string       $name          ;
+ * @property string       $query_name    ;
+ * @property string       $engine        ;
+ * @property string       $version       ;
+ * @property string       $row_format    ;
+ * @property integer      $table_rows    ;
+ * @property integer      $auto_increment;
+ * @property boolean      $is_table      ;
+ * @property boolean      $is_view       ;
+ * @property boolean      $has_schema    ;
  *
- * @property Database $database
+ * @property Database     $database
  * @property ForeignKey[] $foreign_keys_one_to_one
  * @property ForeignKey[] $foreign_keys_one_to_many
- * @property DBColumn[] $columns
- * @property DBColumn[] $primary_columns
+ * @property DBColumn[]   $columns
+ * @property DBColumn[]   $primary_columns
  */
 class DBTable extends PropertyReader
 {
@@ -37,7 +38,7 @@ class DBTable extends PropertyReader
 
     protected function primary_columns()
     {
-        return array_filter($this->columns(),function (DBColumn $column) { return $column->is_primary; });
+        return array_filter($this->columns(), function(DBColumn $column){ return $column->is_primary; });
     }
 
     protected function database()
@@ -45,14 +46,32 @@ class DBTable extends PropertyReader
         return Database::get($this->schema_name);
     }
 
+    /**
+     * @return ForeignKey[]
+     */
     protected function foreign_keys_one_to_one()
     {
-        return Connection::getReferencedForeignKeys($this->schema_name, $this->name);
+        if (null === $this->database->foreignKeys($this->name)) {
+            $keys = Connection::getReferencedForeignKeys($this->schema_name, $this->name);
+            foreach ($keys as $key) {
+                $this->database->addForeignKey($key);
+            }
+        }
+        return $this->database->foreignKeys($this->name, 1);
     }
 
+    /**
+     * @return ForeignKey[]
+     */
     protected function foreign_keys_one_to_many()
     {
-        return Connection::getReferencingForeignKeys($this->schema_name, $this->name);
+        if (null === $this->database->foreignKeys($this->name)) {
+            $keys = Connection::getReferencingForeignKeys($this->schema_name, $this->name);
+            foreach ($keys as $key) {
+                $this->database->addForeignKey($key);
+            }
+        }
+        return $this->database->foreignKeys($this->name, 0);
     }
 
     protected function columns()
@@ -62,7 +81,7 @@ class DBTable extends PropertyReader
 
     protected function query_name()
     {
-        return $this->schema_name . '.' . $this->name;
+        return $this->schema_name.'.'.$this->name;
     }
 
     protected function schema_name()
