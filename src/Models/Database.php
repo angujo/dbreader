@@ -57,22 +57,28 @@ class Database extends PropertyReader
      *
      * @param null        $key
      *
-     * @return ForeignKey[]
+     * @param bool        $table_check
+     *
+     * @return ForeignKey[]|bool|null
      */
-    public function foreignKeys($table_name = null, $key = null)
+    public function foreignKeys($table_name = null, $key = null, $table_check = false)
     {
         if (is_string($table_name)) {
-            if (!in_array($table_name, $this->attributes['foreign_keys_set'])) {
-                return null;
+            if (!isset($this->attributes['foreign_keys_set']) || !in_array($table_name, $this->attributes['foreign_keys_set'])) {
+                return $table_check ? null : [];
             }
-            return array_filter($this->attributes['foreign_keys'], function($k) use ($table_name,$key){ return 0 === stripos($k, $table_name.'.'.(null===$key?'':'.'.(int)$key.'.')); }, ARRAY_FILTER_USE_KEY);
+            if ($table_check) {
+                return true;
+            }
+            $determiner = $table_name.'.'.(null === $key ? '' : (int)$key.'.');
+            return array_values(array_filter($this->attributes['foreign_keys'], function($k) use ($determiner){ return 0 === stripos($k, $determiner); }, ARRAY_FILTER_USE_KEY));
         }
         return null === $table_name ? $this->attributes['foreign_keys'] : [];
     }
 
     public function addForeignKey(ForeignKey $foreignKey)
     {
-        if (!in_array($foreignKey->table_name, $this->attributes['foreign_keys_set'])) {
+        if (!isset($this->attributes['foreign_keys_set']) || !in_array($foreignKey->table_name, $this->attributes['foreign_keys_set'])) {
             $this->attributes['foreign_keys_set'][] = $foreignKey->table_name;
         }
         $this->attributes['foreign_keys'][$foreignKey->table_name.'.'.(int)$foreignKey->isOneToOne().'.'.$foreignKey->name] = $foreignKey;

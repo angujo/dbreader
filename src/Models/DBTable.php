@@ -23,6 +23,7 @@ use Angujo\DBReader\Drivers\Connection;
  * @property boolean      $has_schema    ;
  *
  * @property Database     $database
+ * @property ForeignKey[] $foreign_keys
  * @property ForeignKey[] $foreign_keys_one_to_one
  * @property ForeignKey[] $foreign_keys_one_to_many
  * @property DBColumn[]   $columns
@@ -51,7 +52,7 @@ class DBTable extends PropertyReader
      */
     protected function foreign_keys_one_to_one()
     {
-        if (null === $this->database->foreignKeys($this->name)) {
+        if (null === $this->database->foreignKeys($this->name, 1, true)) {
             $keys = Connection::getReferencedForeignKeys($this->schema_name, $this->name);
             foreach ($keys as $key) {
                 $this->database->addForeignKey($key);
@@ -63,9 +64,17 @@ class DBTable extends PropertyReader
     /**
      * @return ForeignKey[]
      */
+    protected function foreign_keys()
+    {
+        return array_merge($this->foreign_keys_one_to_one, $this->foreign_keys_one_to_many);
+    }
+
+    /**
+     * @return ForeignKey[]
+     */
     protected function foreign_keys_one_to_many()
     {
-        if (null === $this->database->foreignKeys($this->name)) {
+        if (null === $this->database->foreignKeys($this->name, 0, true)) {
             $keys = Connection::getReferencingForeignKeys($this->schema_name, $this->name);
             foreach ($keys as $key) {
                 $this->database->addForeignKey($key);
