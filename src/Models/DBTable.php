@@ -52,13 +52,13 @@ class DBTable extends PropertyReader
      */
     protected function foreign_keys_one_to_one()
     {
-        if (null === $this->database->foreignKeys($this->name, 1, true)) {
+        if (null === $this->database->foreign_keys($this->name, 1, true)) {
             $keys = Connection::getReferencedForeignKeys($this->schema_name, $this->name);
             foreach ($keys as $key) {
                 $this->database->addForeignKey($key);
             }
         }
-        return $this->database->foreignKeys($this->name, 1);
+        return $this->database->foreign_keys($this->name, 1);
     }
 
     /**
@@ -74,13 +74,13 @@ class DBTable extends PropertyReader
      */
     protected function foreign_keys_one_to_many()
     {
-        if (null === $this->database->foreignKeys($this->name, 0, true)) {
+        if (null === $this->database->foreign_keys($this->name, 0, true)) {
             $keys = Connection::getReferencingForeignKeys($this->schema_name, $this->name);
             foreach ($keys as $key) {
                 $this->database->addForeignKey($key);
             }
         }
-        return $this->database->foreignKeys($this->name, 0);
+        return $this->database->foreign_keys($this->name, 0);
     }
 
     protected function columns()

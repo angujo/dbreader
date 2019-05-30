@@ -10,9 +10,10 @@ use Angujo\DBReader\Drivers\Connection;
  *
  * @package Angujo\DBReader\Models
  *
- * @property string     $name   ;
- * @property DBTable[]  $tables ;
- * @property DBColumn[] $columns;
+ * @property string       $name        ;
+ * @property DBTable[]    $tables      ;
+ * @property DBColumn[]   $columns     ;
+ * @property ForeignKey[] $foreign_keys;
  */
 class Database extends PropertyReader
 {
@@ -54,14 +55,12 @@ class Database extends PropertyReader
 
     /**
      * @param null|string $table_name
-     *
      * @param null        $key
-     *
      * @param bool        $table_check
      *
      * @return ForeignKey[]|bool|null
      */
-    public function foreignKeys($table_name = null, $key = null, $table_check = false)
+    public function foreign_keys($table_name = null, $key = null, $table_check = false)
     {
         if (is_string($table_name)) {
             if (!isset($this->attributes['foreign_keys_set']) || !in_array($table_name, $this->attributes['foreign_keys_set'])) {
@@ -93,7 +92,7 @@ class Database extends PropertyReader
      */
     public static function getForeignKeys($schema_name, $table_name = null)
     {
-        return self::get($schema_name)->foreignKeys($table_name);
+        return self::get($schema_name)->foreign_keys($table_name);
     }
 
     /**
