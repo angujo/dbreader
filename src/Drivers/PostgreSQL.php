@@ -34,7 +34,7 @@ class PostgreSQL extends Dbms
     {
         $params = [':db' => $this->currentDatabase()];
         if (is_string($schema)) {
-            $params[':ts'] = $schema;
+            array_add($params, [':ts' => $schema]);
         }
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('select * from information_schema."tables" t where t.table_schema not like \'pg_%\' and t.table_schema not in (\'information_schema\') and t.table_catalog = :db'.(is_string($schema) ? ' and t.table_schema = :ts' : ''));
@@ -53,7 +53,7 @@ class PostgreSQL extends Dbms
      */
     public function getReferencedForeignKeys($table_name, $schema = null)
     {
-        $params = ['db' => $this->currentDatabase(), ':tn' => $table_name];
+        $params = [':db' => $this->currentDatabase(), ':tn' => $table_name];
         $ts     = ['', ''];
         if (is_string($schema)) {
             $params[':ts'] = $schema;
@@ -76,11 +76,19 @@ class PostgreSQL extends Dbms
      *
      * @return ForeignKey[]
      */
-    public function getReferencingForeignKeys($schema, $table_name)
+    public function getReferencingForeignKeys($table_name, $schema = null)
     {
+        $params = [':db' => $this->currentDatabase(), ':tn' => $table_name];
+        if (is_string($schema)) {
+            $params[':ts'] = $schema;
+        }
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare('SELECT false unique_column, tc.table_schema AS foreign_table_schema, tc.constraint_name "name", tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, ccu.table_schema, ccu.table_name, ccu.column_name FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_schema=:ts AND ccu.table_name=:tn;');
-        $stmt->execute([':ts' => $schema, ':tn' => $table_name]);
+        $stmt = $this->connection->prepare('SELECT false unique_column, tc.table_schema AS foreign_table_schema, tc.constraint_name "name", tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, '.
+                                           'ccu.table_schema, ccu.table_name, ccu.column_name FROM information_schema.table_constraints AS tc '.
+                                           'JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema '.
+                                           'JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema '.
+                                           'WHERE tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_name=:tn '.(is_string($schema) ? ' AND ccu.table_schema=:ts ' : ''));
+        $stmt->execute($params);
         //echo $stmt->_debugQuery(true),"\n";
         return array_map(function($details){ return new ForeignKey($details, true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
@@ -91,25 +99,23 @@ class PostgreSQL extends Dbms
      *
      * @return DBColumn[]
      */
-    public function getColumns($schema, $table_name = null)
+    public function getColumns($schema = null, $table_name = null)
     {
-        $query = 'select cmt."comment", c.is_nullable=\'YES\' is_nullable, c.table_name, c.table_schema, c.column_name, c.column_default,c.character_set_name,c.data_type,c.udt_name,c.numeric_scale, t.constraint_type,  '.
+        $params = ['db' => $this->currentDatabase()];
+        $query  = 'select cmt."comment", c.is_nullable=\'YES\' is_nullable, c.table_name, c.table_schema, c.column_name, c.column_default,c.character_set_name,c.data_type,c.udt_name,c.numeric_scale, t.constraint_type,  '.
             's."increment"::double precision>0 is_auto_increment from information_schema."columns" c left join (select tc.table_name,tc.table_schema,ccu.column_name,tc.constraint_type  '.
             'from information_schema.table_constraints tc join information_schema.constraint_column_usage ccu on ccu.constraint_name=tc.constraint_name and ccu.table_name=tc.table_name and '.
             'ccu.table_schema=tc.table_schema and tc.constraint_type= \'PRIMARY KEY\') t on t.table_name=c.table_name and t.column_name=c.column_name and t.table_schema=c.table_schema '.
             'left join information_schema."sequences" s on s.sequence_schema=c.table_schema and c.column_default ilike concat(\'nextval(\'\'\',s.sequence_name,\'\'\'::regclass)\') '.
             'left join (select n.nspname,t.relname,d.objsubid, d.description "comment" from pg_catalog.pg_class t JOIN pg_namespace n ON n.oid = t.relnamespace join pg_catalog.pg_description d on d.objoid=t.oid) cmt '.
             'on c.table_schema=cmt.nspname and cmt.relname=c.table_name and c.ordinal_position=cmt.objsubid '.
-            'where c.table_schema not like \'pg_%\' and c.table_schema not in (\'information_schema\') and c.table_catalog = :db';
-        $order = ' order by c.table_name,c.ordinal_position;';
+            'where c.table_schema not like \'pg_%\' and c.table_schema not in (\'information_schema\') and c.table_catalog = :db '.
+            (is_string($schema) ? ' AND c.TABLE_SCHEMA=:ts' : '').
+            (is_string($table_name) ? ' AND c.TABLE_NAME = :tn' : '').
+            ' order by c.table_name,c.ordinal_position;';
         /** @var DBRPDO_Statement $stmt */
-        if (null === $table_name || !is_string($table_name)) {
-            $stmt = $this->connection->prepare($query.' AND c.TABLE_SCHEMA=:ts'.$order);
-            $stmt->execute(['ts' => $schema, 'db' => $this->currentDatabase()]);
-        } else {
-            $stmt = $this->connection->prepare($query.' AND c.TABLE_SCHEMA=:ts and c.TABLE_NAME = :tn'.$order);
-            $stmt->execute(['ts' => $schema, 'tn' => $table_name, 'db' => $this->currentDatabase()]);
-        }
+        $stmt = $this->connection->prepare($query);
+        $stmt->execute($params);
         // echo $stmt->_debugQuery(true),"\n";
         return array_map(function($details){ return new DBColumn($this->mapColumns($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
