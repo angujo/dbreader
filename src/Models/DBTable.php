@@ -137,4 +137,24 @@ class DBTable extends PropertyReader
     {
         return 0 === strcasecmp('view', $this->getDetail('table_type'));
     }
+
+    /**
+     * @param $name
+     *
+     * @return DBColumn|null
+     */
+    public function getColumn($name)
+    {
+        return count($cols = array_filter($this->columns, function(DBColumn $column) use ($name){ return 0 === strcasecmp($name, $column->name); })) ? array_shift($cols) : null;
+    }
+
+    /**
+     * @param $name
+     *
+     * @return ForeignKey|null
+     */
+    public function getForeignKey($name)
+    {
+        return count($keys = array_filter($this->foreign_keys, function(ForeignKey $foreignKey) use ($name){ return 0 === strcasecmp($name, $foreignKey->name); })) ? array_shift($keys) : null;
+    }
 }
