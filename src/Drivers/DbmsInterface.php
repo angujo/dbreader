@@ -23,21 +23,23 @@ interface DbmsInterface
     public function getTables($db);
 
     /**
-     * @param string|Database $db_name
-     * @param string|DBTable $table_name
+     * @param string|Database $schema
+     * @param string|DBTable  $table_name
+     *
      * @return DBColumn[]
      */
-    public function getColumns($db_name, $table_name);
+    public function getColumns($schema, $table_name);
 
     /**
      * Directly referenced Foreign Keys
      * Result in OneToOne relationship with foreign table
      *
-     * @param $db_name
+     * @param $schema
      * @param $table_name
+     *
      * @return ForeignKey[]
      */
-    public function getReferencedForeignKeys($db_name, $table_name);
+    public function getReferencedForeignKeys($schema, $table_name);
 
     /**
      * Foreign Keys referencing this column

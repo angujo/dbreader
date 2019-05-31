@@ -14,6 +14,7 @@ use Angujo\DBReader\Models\ForeignKey;
  * @package Angujo\DBReader\Drivers
  *
  * @method static Database|null currentDatabase();
+ * @method static Database[] getSchemas();
  * @method static DBTable[] getTables($db_name);
  * @method static DBColumn[] getColumns($db_name, $table_name = null);
  * @method static ForeignKey[] getReferencedForeignKeys($db_name, $table_name);

@@ -10,10 +10,11 @@ use Angujo\DBReader\Drivers\Connection;
  *
  * @package Angujo\DBReader\Models
  *
- * @property string       $name        ;
- * @property DBTable[]    $tables      ;
- * @property DBColumn[]   $columns     ;
- * @property ForeignKey[] $foreign_keys;
+ * @property string       $name         ;
+ * @property DBTable[]    $tables       ;
+ * @property Database[]   $schemas      ;
+ * @property DBColumn[]   $columns      ;
+ * @property ForeignKey[] $foreign_keys ;
  */
 class Database extends PropertyReader
 {
@@ -21,12 +22,14 @@ class Database extends PropertyReader
      * @var static[]
      */
     private static $me = [];
+    private $schema = false;
 
-    public function __construct($name)
+    public function __construct($name, $asSchema = false)
     {
         $this->attributes['name'] = $name;
         parent::__construct(['name' => $name]);
         self::$me[$name] = $this;
+        $this->schema    = $asSchema;
     }
 
     /**
@@ -37,7 +40,7 @@ class Database extends PropertyReader
         if (!empty($this->attributes['tables'])) {
             return $this->attributes['tables'];
         }
-        $tables = Connection::getTables($this);
+        $tables = Connection::getTables($this->schema ? $this->name : null);
         return $this->attributes['tables'] = (array_combine(array_map(function(DBTable $table){ return $table->name; }, $tables), $tables));
     }
 
@@ -84,6 +87,14 @@ class Database extends PropertyReader
         return $this;
     }
 
+    public function schemas()
+    {
+        if (isset($this->attributes['schemas'])) {
+            return $this->attributes['schemas'];
+        }
+        return $this->attributes['schemas'] = (null === ($sch = Connection::getSchemas())) && !$this->schema ? [$this] : [];
+    }
+
     /**
      * @param string      $schema_name
      * @param null|string $table_name
@@ -115,7 +126,7 @@ class Database extends PropertyReader
      */
     public static function getColumn($schema_name, $table_name, $column_name)
     {
-        $cols = array_filter(self::get($schema_name)->columns, function( $key) use ($table_name, $column_name){ return 0 === strcasecmp($key, $table_name.'.'.$column_name); },ARRAY_FILTER_USE_KEY);
+        $cols = array_filter(self::get($schema_name)->columns, function($key) use ($table_name, $column_name){ return 0 === strcasecmp($key, $table_name.'.'.$column_name); }, ARRAY_FILTER_USE_KEY);
         return !empty($cols) ? array_shift($cols) : null;
     }
 
