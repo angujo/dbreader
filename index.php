@@ -6,10 +6,11 @@ use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBTable;
 
 //echo '<pre>';
-$db = Connection::currentDatabase();
-
+//$db = Connection::currentDatabase();
+$db=Connection::changeDatabase('dvdrental');
+$sc=$db->schemas;
 print_r(array_map(function(Database $database){
-    return $database->foreign_keys;
+    return $database->columns;
 }, $db->schemas));
 
 /*print_r($db->tables->take(5)->map(function (DBTable $table) {

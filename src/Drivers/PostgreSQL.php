@@ -125,7 +125,7 @@ class PostgreSQL extends Dbms
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare($query);
         $stmt->execute($params);
-        // echo $stmt->_debugQuery(true),"\n";
+         echo $stmt->_debugQuery(true),"\n";
         return $this->mapColumns(array_map(function($details){ return new DBColumn($this->mapColumnsData($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 

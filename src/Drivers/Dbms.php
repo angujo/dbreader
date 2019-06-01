@@ -57,4 +57,10 @@ abstract class Dbms implements DbmsInterface
     {
         return array_combine(array_map(function(ForeignKey $foreignKey){ return implode('.', [$foreignKey->table_schema, $foreignKey->table_name, $foreignKey->name]); }, $keys), $keys);
     }
+
+    public function changeDatabase($db_name)
+    {
+        $this->current_db = new Database($db_name);
+        return $this->current_db;
+    }
 }

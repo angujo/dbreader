@@ -15,6 +15,7 @@ use Angujo\DBReader\Models\ForeignKey;
  * @package Angujo\DBReader\Drivers
  *
  * @method static Database|null currentDatabase();
+ * @method static Database changeDatabase($db_name);
  * @method static Database[] getSchemas();
  * @method static DBTable[] getTables($schema_name);
  * @method static DBColumn[] getColumns($schema_name = null, $table_name = null);
@@ -31,6 +32,8 @@ class Connection
 
     /**
      * Connection constructor.
+     *
+     * @param bool $skip
      *
      * @throws ReaderException
      */
@@ -56,6 +59,11 @@ class Connection
                 $this->dbms = new PostgreSQL($pdo);
                 break;
         }
+    }
+
+    public static function fromConfig()
+    {
+        (self::$me = self::$me ?: new self(true))->dbms(new \PDO(Config::getDsnString(), Config::username(), Config::password(), Config::options()), Config::dbms());
     }
 
     public static function setPDO(\PDO $PDO, $dbms = 'postgres')
@@ -86,7 +94,7 @@ class Connection
      * @return ForeignKey[]
      * @throws ReaderException
      */
-    public static function getForeignKeys($schema, $table_name=null)
+    public static function getForeignKeys($schema, $table_name = null)
     {
         self::$me = self::$me ?: new self();
         return array_merge(self::$me->dbms->getReferencedForeignKeys($table_name, $schema), self::$me->dbms->getReferencingForeignKeys($table_name, $schema));
