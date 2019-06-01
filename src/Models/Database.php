@@ -10,11 +10,12 @@ use Angujo\DBReader\Drivers\Connection;
  *
  * @package Angujo\DBReader\Models
  *
- * @property string       $name         ;
- * @property DBTable[]    $tables       ;
- * @property Database[]   $schemas      ;
- * @property DBColumn[]   $columns      ;
- * @property ForeignKey[] $foreign_keys ;
+ * @property string       $name            ;
+ * @property string|null  $db_name         ;
+ * @property DBTable[]    $tables          ;
+ * @property Database[]   $schemas         ;
+ * @property DBColumn[]   $columns         ;
+ * @property ForeignKey[] $foreign_keys    ;
  */
 class Database extends PropertyReader
 {
@@ -22,14 +23,14 @@ class Database extends PropertyReader
      * @var static[]
      */
     private static $me = [];
-    private $schema = false;
 
-    public function __construct($name, $asSchema = false)
+    public function __construct($name, $db_name = null)
     {
-        $this->attributes['name'] = $name;
         parent::__construct(['name' => $name]);
-        self::$me[$name] = $this;
-        $this->schema    = $asSchema;
+        if ($db_name) {
+            $this->attributes['db_name'] = $db_name;
+        }
+        self::$me[($db_name ? $db_name.'.' : '').$name] = $this;
     }
 
     /**
@@ -40,7 +41,7 @@ class Database extends PropertyReader
         if (!empty($this->attributes['tables'])) {
             return $this->attributes['tables'];
         }
-        $tables = Connection::getTables($this->schema ? $this->name : null);
+        $tables = Connection::getTables($this->db_name ? $this->name : null);
         return $this->attributes['tables'] = (array_combine(array_map(function(DBTable $table){ return $table->name; }, $tables), $tables));
     }
 
@@ -89,10 +90,13 @@ class Database extends PropertyReader
 
     public function schemas()
     {
+        if ($this->db_name) {
+            return [];
+        }
         if (isset($this->attributes['schemas'])) {
             return $this->attributes['schemas'];
         }
-        return $this->attributes['schemas'] = (null === ($sch = Connection::getSchemas())) && !$this->schema ? [$this] : [];
+        return $this->attributes['schemas'] = (null === ($sch = Connection::getSchemas())) && $this->db_name ? [$this] : [];
     }
 
     /**

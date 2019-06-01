@@ -15,10 +15,10 @@ use Angujo\DBReader\Models\ForeignKey;
  *
  * @method static Database|null currentDatabase();
  * @method static Database[] getSchemas();
- * @method static DBTable[] getTables($db_name);
- * @method static DBColumn[] getColumns($db_name=null, $table_name = null);
- * @method static ForeignKey[] getReferencedForeignKeys( $table_name,$db_name=null);
- * @method static ForeignKey[] getReferencingForeignKeys($table_name,$db_name=null );
+ * @method static DBTable[] getTables($schema_name);
+ * @method static DBColumn[] getColumns($schema_name=null, $table_name = null);
+ * @method static ForeignKey[] getReferencedForeignKeys( $table_name,$schema_name=null);
+ * @method static ForeignKey[] getReferencingForeignKeys($table_name,$schema_name=null );
  */
 class Connection
 {
