@@ -6,9 +6,8 @@ use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBTable;
 
 //echo '<pre>';
-//$db = Connection::currentDatabase();
-$db=Connection::changeDatabase('dvdrental');
-$sc=$db->schemas;
+$db = Connection::currentDatabase();
+
 print_r(array_map(function(Database $database){
     return $database->columns;
 }, $db->schemas));
