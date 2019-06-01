@@ -11,28 +11,35 @@ use Angujo\DBReader\Models\ForeignKey;
 
 /**
  * Class Connection
+ *
  * @package Angujo\DBReader\Drivers
  *
  * @method static Database|null currentDatabase();
  * @method static Database[] getSchemas();
  * @method static DBTable[] getTables($schema_name);
- * @method static DBColumn[] getColumns($schema_name=null, $table_name = null);
- * @method static ForeignKey[] getReferencedForeignKeys( $table_name,$schema_name=null);
- * @method static ForeignKey[] getReferencingForeignKeys($table_name,$schema_name=null );
+ * @method static DBColumn[] getColumns($schema_name = null, $table_name = null);
+ * @method static ForeignKey[] getReferencedForeignKeys($table_name, $schema_name = null);
+ * @method static ForeignKey[] getReferencingForeignKeys($table_name, $schema_name = null);
  */
 class Connection
 {
     private static $me;
+    /**
+     * @var Dbms
+     */
     private $dbms;
 
     /**
      * Connection constructor.
+     *
      * @throws ReaderException
      */
     private function __construct($skip = false)
     {
         if (!$skip) {
-            if (!Config::getDsnString()) throw new ReaderException('Invalid DNS connection!');
+            if (!Config::getDsnString()) {
+                throw new ReaderException('Invalid DNS connection!');
+            }
             $this->dbms(new \PDO(Config::getDsnString(), Config::username(), Config::password(), Config::options()));
         }
     }
@@ -59,13 +66,29 @@ class Connection
     /**
      * @param $method
      * @param $args
+     *
      * @return mixed
      * @throws ReaderException
      */
     public static function __callStatic($method, $args)
     {
         self::$me = self::$me ?: new self();
-        if (method_exists(self::$me->dbms, $method) && is_callable([self::$me->dbms, $method])) return call_user_func_array([self::$me->dbms, $method], $args);
+        if (method_exists(self::$me->dbms, $method) && is_callable([self::$me->dbms, $method])) {
+            return call_user_func_array([self::$me->dbms, $method], $args);
+        }
         throw new ReaderException('Invalid Query method!');
+    }
+
+    /**
+     * @param $schema
+     * @param $table_name
+     *
+     * @return ForeignKey[]
+     * @throws ReaderException
+     */
+    public static function getForeignKeys($schema, $table_name=null)
+    {
+        self::$me = self::$me ?: new self();
+        return array_merge(self::$me->dbms->getReferencedForeignKeys($table_name, $schema), self::$me->dbms->getReferencingForeignKeys($table_name, $schema));
     }
 }

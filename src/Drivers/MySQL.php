@@ -14,7 +14,7 @@ class MySQL extends Dbms
 
     public function getSchemas()
     {
-        return null;
+        return [$this->currentDatabase()];
     }
 
     /**
@@ -27,7 +27,7 @@ class MySQL extends Dbms
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('SELECT * FROM information_schema.TABLES t WHERE t.TABLE_SCHEMA= :db');
         $stmt->execute(['db' => $db]);
-        return array_map(function($details) use ($db){ return new DBTable($details); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return $this->mapTables(array_map(function($details) use ($db){ return new DBTable($details); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
     /**
@@ -38,15 +38,15 @@ class MySQL extends Dbms
      *
      * @return ForeignKey[]
      */
-    public function getReferencedForeignKeys($table_name,$schema=null)
+    public function getReferencedForeignKeys($table_name, $schema = null)
     {
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA, cu.TABLE_NAME, cu.COLUMN_NAME, cu.REFERENCED_TABLE_SCHEMA foreign_table_schema, cu.REFERENCED_TABLE_NAME foreign_table_name, cu.REFERENCED_COLUMN_NAME foreign_column_name, false unique_column from information_schema.KEY_COLUMN_USAGE cu where cu.TABLE_SCHEMA=? and cu.TABLE_NAME=? and cu.REFERENCED_TABLE_NAME is not null');
         $stmt->execute([$schema, $table_name]);
         $ustmt = $this->connection->prepare('select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA foreign_table_schema, cu.TABLE_NAME foreign_table_name, cu.COLUMN_NAME foreign_column_name, cu.REFERENCED_TABLE_SCHEMA table_schema, cu.REFERENCED_TABLE_NAME table_name, cu.REFERENCED_COLUMN_NAME column_name, true unique_column from information_schema.KEY_COLUMN_USAGE cu join information_schema.`COLUMNS` c on c.COLUMN_KEY=\'UNI\' and c.TABLE_NAME=cu.TABLE_NAME and c.TABLE_SCHEMA=cu.TABLE_SCHEMA and c.COLUMN_NAME=cu.COLUMN_NAME where cu.TABLE_SCHEMA=:ts and cu.REFERENCED_TABLE_NAME=:tn;');
-        $ustmt->execute(['ts' => is_string($schema)?$schema:$this->currentDatabase(), 'tn' => $table_name]);
+        $ustmt->execute(['ts' => is_string($schema) ? $schema : $this->currentDatabase(), 'tn' => $table_name]);
         // echo $stmt->_debugQuery(true),"\n";
-        return array_map(function($details){ return new ForeignKey($details, false); }, array_merge($ustmt->fetchAll(\PDO::FETCH_ASSOC), $stmt->fetchAll(\PDO::FETCH_ASSOC)));
+        return $this->mapForeignKeys(array_map(function($details){ return new ForeignKey($details, false); }, array_merge($ustmt->fetchAll(\PDO::FETCH_ASSOC), $stmt->fetchAll(\PDO::FETCH_ASSOC))));
     }
 
     /**
@@ -57,13 +57,13 @@ class MySQL extends Dbms
      *
      * @return ForeignKey[]
      */
-    public function getReferencingForeignKeys($table_name,$db_name=null )
+    public function getReferencingForeignKeys($table_name, $db_name = null)
     {
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('select false unique_column, cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA foreign_table_schema, cu.TABLE_NAME foreign_table_name, cu.COLUMN_NAME foreign_column_name, cu.REFERENCED_TABLE_SCHEMA table_schema, cu.REFERENCED_TABLE_NAME table_name, cu.REFERENCED_COLUMN_NAME column_name from information_schema.KEY_COLUMN_USAGE cu JOIN information_schema.COLUMNS c ON c.COLUMN_KEY <> \'UNI\' and c.TABLE_NAME=cu.TABLE_NAME and c.TABLE_SCHEMA=cu.TABLE_SCHEMA and c.COLUMN_NAME=cu.REFERENCED_COLUMN_NAME where cu.REFERENCED_TABLE_SCHEMA=:ts and cu.REFERENCED_TABLE_NAME = :tn;');
-        $stmt->execute(['ts' => is_string($db_name)?$db_name:$this->currentDatabase(), 'tn' => $table_name]);
+        $stmt->execute(['ts' => is_string($db_name) ? $db_name : $this->currentDatabase(), 'tn' => $table_name]);
         // echo $stmt->_debugQuery(true),"\n";
-        return array_map(function($details){ return new ForeignKey($details, true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return $this->mapForeignKeys(array_map(function($details){ return new ForeignKey($details, true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
     /**
@@ -72,18 +72,20 @@ class MySQL extends Dbms
      *
      * @return DBColumn[]
      */
-    public function getColumns($schema=null, $table_name = null)
+    public function getColumns($schema = null, $table_name = null)
     {
-        $params=['ts' => $schema,];
-        if (is_string($table_name))$params['tn']=$table_name;
+        $params = ['ts' => $schema,];
+        if (is_string($table_name)) {
+            $params['tn'] = $table_name;
+        }
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('select * from information_schema.`COLUMNS` c '.
-            'where c.TABLE_SCHEMA=:ts '.(is_string($table_name)?' and c.TABLE_NAME = :tn':''));
+                                           'where c.TABLE_SCHEMA=:ts '.(is_string($table_name) ? ' and c.TABLE_NAME = :tn' : ''));
         $stmt->execute($params);
-        return array_map(function($details){ return new DBColumn($this->mapColumns($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return $this->mapColumns(array_map(function($details){ return new DBColumn($this->mapColumnsData($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
-    protected function mapColumns(array $data)
+    protected function mapColumnsData(array $data)
     {
         $_data              = $data;
         $_data['data_type'] = [];
@@ -115,13 +117,13 @@ class MySQL extends Dbms
     }
 
     /**
-     * @return Database
+     * @param bool $name
+     *
+     * @return Database|string
      */
-    public function currentDatabase()
+    public function currentDatabase($name=false)
     {
-        if ($this->current_db) {
-            return $this->current_db;
-        }
-        return $this->current_db = new Database($this->connection->query('SELECT database();')->fetchColumn());
+         $this->current_db =$this->current_db?: new Database($this->connection->query('SELECT database();')->fetchColumn());
+        return true === $name && $this->current_db ? $this->current_db->name : $this->current_db;
     }
 }

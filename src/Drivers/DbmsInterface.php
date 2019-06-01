@@ -12,15 +12,18 @@ use Angujo\DBReader\Models\ForeignKey;
 interface DbmsInterface
 {
     /**
+     * @param bool $name
+     *
      * @return Database
      */
-    public function currentDatabase();
+    public function currentDatabase($name=false);
 
     /**
-     * @param string|Database $db
+     * @param string $db_name
+     *
      * @return DBTable[]
      */
-    public function getTables($db);
+    public function getTables($db_name);
 
     /**
      * @param string|Database $schema
@@ -28,7 +31,7 @@ interface DbmsInterface
      *
      * @return DBColumn[]
      */
-    public function getColumns($schema, $table_name);
+    public function getColumns($schema = null, $table_name = null);
 
     /**
      * Directly referenced Foreign Keys
@@ -39,7 +42,7 @@ interface DbmsInterface
      *
      * @return ForeignKey[]
      */
-    public function getReferencedForeignKeys($schema, $table_name);
+    public function getReferencedForeignKeys($table_name, $schema = null);
 
     /**
      * Foreign Keys referencing this column
@@ -47,7 +50,8 @@ interface DbmsInterface
      *
      * @param $db_name
      * @param $table_name
+     *
      * @return ForeignKey[]
      */
-    public function getReferencingForeignKeys($db_name, $table_name);
+    public function getReferencingForeignKeys($table_name, $db_name = null);
 }

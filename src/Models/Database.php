@@ -26,10 +26,7 @@ class Database extends PropertyReader
 
     public function __construct($name, $db_name = null)
     {
-        parent::__construct(['name' => $name]);
-        if ($db_name) {
-            $this->attributes['db_name'] = $db_name;
-        }
+        parent::__construct(['name' => $name, 'db_name' => $db_name]);
         self::$me[($db_name ? $db_name.'.' : '').$name] = $this;
     }
 
@@ -41,8 +38,7 @@ class Database extends PropertyReader
         if (!empty($this->attributes['tables'])) {
             return $this->attributes['tables'];
         }
-        $tables = Connection::getTables($this->db_name ? $this->name : null);
-        return $this->attributes['tables'] = (array_combine(array_map(function(DBTable $table){ return $table->name; }, $tables), $tables));
+        return $this->attributes['tables'] = Connection::getTables($this->db_name ? $this->name : null);
     }
 
     /**
@@ -53,8 +49,7 @@ class Database extends PropertyReader
         if (!empty($this->attributes['columns'])) {
             return $this->attributes['columns'];
         }
-        $columns = Connection::getColumns($this->name);
-        return $this->attributes['columns'] = (array_combine(array_map(function(DBColumn $column){ return $column->table_name.'.'.$column->name; }, $columns), $columns));
+        return $this->attributes['columns'] = Connection::getColumns($this->name);
     }
 
     /**
@@ -63,9 +58,13 @@ class Database extends PropertyReader
      * @param bool        $table_check
      *
      * @return ForeignKey[]|bool|null
+     * @throws \Angujo\DBReader\Drivers\ReaderException
      */
     public function foreign_keys($table_name = null, $key = null, $table_check = false)
     {
+        if (!isset($this->attributes['foreign_keys'])) {
+            $this->attributes['foreign_keys'] = Connection::getForeignKeys($this->db_name ? $this->name : null);
+        }
         if (is_string($table_name)) {
             if (!isset($this->attributes['foreign_keys_set']) || !in_array($table_name, $this->attributes['foreign_keys_set'])) {
                 return $table_check ? null : [];
@@ -76,7 +75,7 @@ class Database extends PropertyReader
             $determiner = $table_name.'.'.(null === $key ? '' : (int)$key.'.');
             return array_values(array_filter($this->attributes['foreign_keys'], function($k) use ($determiner){ return 0 === stripos($k, $determiner); }, ARRAY_FILTER_USE_KEY));
         }
-        return null === $table_name ? $this->attributes['foreign_keys'] : [];
+        return $this->attributes['foreign_keys'] = null === $table_name && isset($this->attributes['foreign_keys']) ? $this->attributes['foreign_keys'] : [];
     }
 
     public function addForeignKey(ForeignKey $foreignKey)
@@ -88,7 +87,7 @@ class Database extends PropertyReader
         return $this;
     }
 
-    public function schemas()
+    protected function schemas()
     {
         if ($this->db_name) {
             return [];
@@ -96,7 +95,7 @@ class Database extends PropertyReader
         if (isset($this->attributes['schemas'])) {
             return $this->attributes['schemas'];
         }
-        return $this->attributes['schemas'] = (null === ($sch = Connection::getSchemas())) && $this->db_name ? [$this] : [];
+        return $this->attributes['schemas'] = Connection::getSchemas();
     }
 
     /**
