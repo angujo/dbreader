@@ -14,7 +14,7 @@ class MySQL extends Dbms
 
     public function getSchemas()
     {
-        return [$this->currentDatabase()];
+        return [new Database($this->currentDatabase(true), $this->currentDatabase(true))];
     }
 
     /**
@@ -40,12 +40,14 @@ class MySQL extends Dbms
      */
     public function getReferencedForeignKeys($table_name, $schema = null)
     {
-        $params=[':ts' => is_string($schema) ? $schema : $this->currentDatabase(true)];
-        if (is_string($table_name))$params[':tn']=$table_name;
+        $params = [':ts' => is_string($schema) ? $schema : $this->currentDatabase(true)];
+        if (is_string($table_name)) {
+            $params[':tn'] = $table_name;
+        }
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare('select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA, cu.TABLE_NAME, cu.COLUMN_NAME, cu.REFERENCED_TABLE_SCHEMA foreign_table_schema, cu.REFERENCED_TABLE_NAME foreign_table_name, cu.REFERENCED_COLUMN_NAME foreign_column_name, false unique_column from information_schema.KEY_COLUMN_USAGE cu where cu.TABLE_SCHEMA=:ts and cu.REFERENCED_TABLE_NAME is not null '.(is_string($table_name)?' and cu.TABLE_NAME=:tn ':''));
+        $stmt = $this->connection->prepare('select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA, cu.TABLE_NAME, cu.COLUMN_NAME, cu.REFERENCED_TABLE_SCHEMA foreign_table_schema, cu.REFERENCED_TABLE_NAME foreign_table_name, cu.REFERENCED_COLUMN_NAME foreign_column_name, false unique_column from information_schema.KEY_COLUMN_USAGE cu where cu.TABLE_SCHEMA=:ts and cu.REFERENCED_TABLE_NAME is not null '.(is_string($table_name) ? ' and cu.TABLE_NAME=:tn ' : ''));
         $stmt->execute($params);
-        $ustmt = $this->connection->prepare('select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA foreign_table_schema, cu.TABLE_NAME foreign_table_name, cu.COLUMN_NAME foreign_column_name, cu.REFERENCED_TABLE_SCHEMA table_schema, cu.REFERENCED_TABLE_NAME table_name, cu.REFERENCED_COLUMN_NAME column_name, true unique_column from information_schema.KEY_COLUMN_USAGE cu join information_schema.`COLUMNS` c on c.COLUMN_KEY=\'UNI\' and c.TABLE_NAME=cu.TABLE_NAME and c.TABLE_SCHEMA=cu.TABLE_SCHEMA and c.COLUMN_NAME=cu.COLUMN_NAME where cu.TABLE_SCHEMA=:ts'.(is_string($table_name)?' and cu.REFERENCED_TABLE_NAME=:tn ':''));
+        $ustmt = $this->connection->prepare('select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA foreign_table_schema, cu.TABLE_NAME foreign_table_name, cu.COLUMN_NAME foreign_column_name, cu.REFERENCED_TABLE_SCHEMA table_schema, cu.REFERENCED_TABLE_NAME table_name, cu.REFERENCED_COLUMN_NAME column_name, true unique_column from information_schema.KEY_COLUMN_USAGE cu join information_schema.`COLUMNS` c on c.COLUMN_KEY=\'UNI\' and c.TABLE_NAME=cu.TABLE_NAME and c.TABLE_SCHEMA=cu.TABLE_SCHEMA and c.COLUMN_NAME=cu.COLUMN_NAME where cu.TABLE_SCHEMA=:ts'.(is_string($table_name) ? ' and cu.REFERENCED_TABLE_NAME=:tn ' : ''));
         $ustmt->execute($params);
         //echo $stmt->_debugQuery(true), "\n";
         return $this->mapForeignKeys(array_map(function($details){ return new ForeignKey($details, false); }, array_merge($ustmt->fetchAll(\PDO::FETCH_ASSOC), $stmt->fetchAll(\PDO::FETCH_ASSOC))));

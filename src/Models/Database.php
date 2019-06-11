@@ -154,4 +154,9 @@ class Database extends PropertyReader
     {
         return isset(self::$me[$name]) ? self::$me[$name] : new self($name);
     }
+
+    public function __toString()
+    {
+        return $this->name;
+    }
 }

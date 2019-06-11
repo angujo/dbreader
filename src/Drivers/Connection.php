@@ -14,7 +14,7 @@ use Angujo\DBReader\Models\ForeignKey;
  *
  * @package Angujo\DBReader\Drivers
  *
- * @method static Database|null currentDatabase();
+ * @method static Database|string|null currentDatabase($name=false);
  * @method static Database changeDatabase($db_name);
  * @method static Database[] getSchemas();
  * @method static DBTable[] getTables($schema_name);
