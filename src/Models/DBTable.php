@@ -4,25 +4,27 @@ namespace Angujo\DBReader\Models;
 
 
 use Angujo\DBReader\Drivers\Connection;
+use Angujo\DBReader\Drivers\ReaderException;
 
 /**
  * Class DBTable
  *
  * @package Angujo\DBReader\Models
  *
- * @property string       $schema_name   ;
- * @property string       $name          ;
- * @property string       $query_name    ;
- * @property string       $engine        ;
- * @property string       $version       ;
- * @property string       $row_format    ;
- * @property integer      $table_rows    ;
- * @property integer      $auto_increment;
- * @property boolean      $is_table      ;
- * @property boolean      $is_view       ;
- * @property boolean      $has_schema    ;
+ * @property string       $schema_name
+ * @property string       $name
+ * @property string       $schema_naming
+ * @property string       $query_name
+ * @property string       $engine
+ * @property string       $version
+ * @property string       $row_format
+ * @property integer      $table_rows
+ * @property integer      $auto_increment
+ * @property boolean      $is_table
+ * @property boolean      $is_view
+ * @property boolean      $has_schema
  *
- * @property Database     $database
+ * @property Schema       $schema
  * @property ForeignKey[] $foreign_keys
  * @property ForeignKey[] $foreign_keys_one_to_one
  * @property ForeignKey[] $foreign_keys_one_to_many
@@ -49,16 +51,17 @@ class DBTable extends PropertyReader
 
     /**
      * @return ForeignKey[]
+     * @throws ReaderException
      */
     protected function foreign_keys_one_to_one()
     {
-        if (null === $this->database->foreign_keys($this->name, 1, true)) {
+        if (null === $this->schema->foreign_keys($this->name, 1, true)) {
             $keys = Connection::getReferencedForeignKeys($this->schema_name, $this->name);
             foreach ($keys as $key) {
-                $this->database->addForeignKey($key);
+                $this->schema->addForeignKey($key);
             }
         }
-        return $this->database->foreign_keys($this->name, 1);
+        return $this->schema->foreign_keys($this->name, 1);
     }
 
     /**
@@ -71,21 +74,24 @@ class DBTable extends PropertyReader
 
     /**
      * @return ForeignKey[]
+     * @throws ReaderException
      */
     protected function foreign_keys_one_to_many()
     {
-        if (null === $this->database->foreign_keys($this->name, 0, true)) {
+        if (null === $this->schema->foreign_keys($this->name, 0, true)) {
             $keys = Connection::getReferencingForeignKeys($this->schema_name, $this->name);
             foreach ($keys as $key) {
-                $this->database->addForeignKey($key);
+                $this->schema->addForeignKey($key);
             }
         }
-        return $this->database->foreign_keys($this->name, 0);
+        return $this->schema->foreign_keys($this->name, 0);
     }
 
     protected function columns()
     {
-        return Database::getColumns($this->schema_name, $this->name);
+        return array_filter($this->schema->columns, function(DBColumn $column){
+            return 0 === strcasecmp($this->schema_name, $column->schema_name) && 0 === strcasecmp($this->name, $column->table_name);
+        });
     }
 
     protected function query_name()
@@ -101,6 +107,11 @@ class DBTable extends PropertyReader
     protected function name()
     {
         return $this->getDetail('table_name');
+    }
+
+    protected function schema_naming()
+    {
+        return $this->schema_name.'.'.$this->name;
     }
 
     protected function engine()

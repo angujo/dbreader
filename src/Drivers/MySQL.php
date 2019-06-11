@@ -8,13 +8,14 @@ use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
+use Angujo\DBReader\Models\Schema;
 
 class MySQL extends Dbms
 {
 
     public function getSchemas()
     {
-        return [new Database($this->currentDatabase(true), $this->currentDatabase(true))];
+        return [new Schema($this->currentDatabase(true), $this->currentDatabase(true))];
     }
 
     /**

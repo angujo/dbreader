@@ -8,6 +8,7 @@ use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
+use Angujo\DBReader\Models\Schema;
 
 /**
  * Class Connection
@@ -16,7 +17,7 @@ use Angujo\DBReader\Models\ForeignKey;
  *
  * @method static Database|string|null currentDatabase($name=false);
  * @method static Database changeDatabase($db_name);
- * @method static Database[] getSchemas();
+ * @method static Schema[] getSchemas();
  * @method static DBTable[] getTables($schema_name);
  * @method static DBColumn[] getColumns($schema_name = null, $table_name = null);
  * @method static ForeignKey[] getReferencedForeignKeys($table_name, $schema_name = null);

@@ -8,6 +8,7 @@ use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
+use Angujo\DBReader\Models\Schema;
 
 class PostgreSQL extends Dbms
 {
@@ -22,7 +23,7 @@ class PostgreSQL extends Dbms
         $stmt = $this->connection->prepare('select schema_name from information_schema.schemata where schema_name not like \'pg_%\' and schema_name not in (\'information_schema\') and catalog_name = :db');
         $stmt->execute([':db' => $this->currentDatabase(true)]);
         // echo $stmt->_debugQuery(true), "\n";
-        return array_map(function($details){ return new Database($details['schema_name'], $this->currentDatabase(true)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return array_map(function($details){ return new Schema($details['schema_name'], $this->currentDatabase(true)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
