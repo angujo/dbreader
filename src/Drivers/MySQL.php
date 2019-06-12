@@ -13,9 +13,9 @@ use Angujo\DBReader\Models\Schema;
 class MySQL extends Dbms
 {
 
-    public function getSchemas()
-    {
-        return [new Schema($this->currentDatabase(true), $this->currentDatabase(true))];
+    public function getSchemas($db_name=null)
+    {$db_name=$db_name?:$this->currentDatabase(true);
+        return [new Schema($db_name,$db_name)];
     }
 
     /**

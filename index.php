@@ -4,11 +4,12 @@ include 'vendor/autoload.php';
 use Angujo\DBReader\Drivers\Connection;
 use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBTable;
+use Angujo\DBReader\Models\Schema;
 
 //echo '<pre>';
 $db = Connection::currentDatabase();
 
-print_r(array_map(function(Database $database){
+print_r(array_map(function(Schema $database){
     return $database->columns;
 }, $db->schemas));
 
