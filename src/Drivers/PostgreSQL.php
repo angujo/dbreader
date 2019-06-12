@@ -15,7 +15,7 @@ class PostgreSQL extends Dbms
     protected $functions = ['now', 'nextval', 'currval', 'setval',];
 
     /**
-     * @return Database[]
+     * @return Schema[]
      */
     public function getSchemas()
     {

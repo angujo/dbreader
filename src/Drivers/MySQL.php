@@ -12,12 +12,6 @@ use Angujo\DBReader\Models\Schema;
 
 class MySQL extends Dbms
 {
-
-    public function getSchemas()
-    {
-        return [new Schema($this->currentDatabase(true), $this->currentDatabase(true))];
-    }
-
     /**
      * @param Database|string $db
      *
