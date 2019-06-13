@@ -72,10 +72,11 @@ class DBTable extends PropertyReader
 
     /**
      * @return ForeignKey[]
+     * @throws ReaderException
      */
     protected function foreign_keys()
     {
-        return array_merge($this->foreign_keys_one_to_one, $this->foreign_keys_one_to_many);
+        return $this->schema->foreign_keys($this->name);
     }
 
     /**

@@ -16,7 +16,7 @@ use Angujo\DBReader\Drivers\ReaderException;
  * @property string       $name
  * @property DBTable[]    $tables
  * @property DBColumn[]   $columns
- * @property Database   $database
+ * @property Database     $database
  * @property ForeignKey[] $foreign_keys
  */
 class Schema extends PropertyReader
@@ -65,7 +65,7 @@ class Schema extends PropertyReader
         if (!isset($this->attributes['foreign_keys'])) {
             $this->attributes['foreign_keys'] = Connection::getForeignKeys($this->name);
         }
-        if (is_string($table_name)) {
+        if (is_string($table_name) && $table_name) {
             if (!isset($this->attributes['foreign_keys_set']) || !in_array($table_name, $this->attributes['foreign_keys_set'])) {
                 return $table_check ? null : [];
             }
