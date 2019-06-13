@@ -41,7 +41,7 @@ class PostgreSQL extends Dbms
         $stmt = $this->connection->prepare('select * from information_schema."tables" t where t.table_schema not like \'pg_%\' and t.table_schema not in (\'information_schema\') and t.table_catalog = :db'.(is_string($schema) ? ' and t.table_schema = :ts' : ''));
         $stmt->execute($params);
         //echo $stmt->_debugQuery(true),"\n";
-        return $this->mapTables(array_map(function($details){ return new DBTable($details, true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
+        return $this->mapTables(array_map(function($details){ return new DBTable(array_merge(['db_name' => $this->currentDatabase(true)], $details), true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
     /**
@@ -68,7 +68,7 @@ class PostgreSQL extends Dbms
                                            'union '.
                                            "select ccu.table_schema, tc.constraint_name \"name\", ccu.table_name, ccu.column_name, tc.table_schema AS foreign_table_schema, tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, false unique_column FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema join (select kcu.table_catalog,kcu.table_schema, kcu.column_name, kcu.table_name from information_schema.key_column_usage kcu join information_schema.table_constraints tc on tc.table_name=kcu.table_name and tc.constraint_name=kcu.constraint_name AND tc.table_schema = kcu.table_schema and tc.constraint_type='UNIQUE') t on t.table_name=tc.table_name and t.table_catalog=tc.table_catalog and t.table_schema=tc.table_schema and t.column_name=kcu.column_name WHERE tc.constraint_type = 'FOREIGN KEY' {$ts[1]} AND ccu.table_catalog=:db ".(is_string($table_name) ? ' AND ccu.table_name=:tn' : ''));
         $stmt->execute($params);
-       // echo $stmt->_debugQuery(true), "\n";
+        // echo $stmt->_debugQuery(true), "\n";
         return $this->mapForeignKeys(array_map(function($details){ return new ForeignKey($details, false); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
@@ -126,7 +126,7 @@ class PostgreSQL extends Dbms
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare($query);
         $stmt->execute($params);
-         echo $stmt->_debugQuery(true),"\n";
+        echo $stmt->_debugQuery(true), "\n";
         return $this->mapColumns(array_map(function($details){ return new DBColumn($this->mapColumnsData($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
