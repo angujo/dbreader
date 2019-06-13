@@ -13,6 +13,7 @@ use Angujo\DBReader\Drivers\ReaderException;
  *
  * @property string       $schema_name
  * @property string       $name
+ * @property string       $db_name
  * @property string       $schema_naming
  * @property string       $query_name
  * @property string       $engine
@@ -46,7 +47,12 @@ class DBTable extends PropertyReader
 
     protected function database()
     {
-        return Database::get($this->schema_name);
+        return Database::get($this->db_name);
+    }
+
+    protected function schema()
+    {
+        return $this->database()->getSchema($this->schema_name);
     }
 
     /**
@@ -56,7 +62,7 @@ class DBTable extends PropertyReader
     protected function foreign_keys_one_to_one()
     {
         if (null === $this->schema->foreign_keys($this->name, 1, true)) {
-            $keys = Connection::getReferencedForeignKeys($this->schema_name, $this->name);
+            $keys = Connection::getReferencedForeignKeys($this->name, $this->schema_name);
             foreach ($keys as $key) {
                 $this->schema->addForeignKey($key);
             }

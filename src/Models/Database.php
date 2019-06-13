@@ -48,6 +48,17 @@ class Database extends PropertyReader
     }
 
     /**
+     * @param $name
+     *
+     * @return null|Schema
+     */
+    public function getSchema($name)
+    {
+        $schemas = array_filter($this->schemas(), function(Schema $schema) use ($name){ return 0 === strcasecmp($schema->name, $name); });
+        return array_shift($schemas);
+    }
+
+    /**
      * @return string
      */
     public function __toString()
