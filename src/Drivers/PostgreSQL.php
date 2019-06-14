@@ -80,18 +80,22 @@ class PostgreSQL extends Dbms
      *
      * @return ForeignKey[]
      */
-    public function getReferencingForeignKeys($table_name, $schema = null)
+    public function getReferencingForeignKeys($schema, $table_name = null)
     {
-        $params = [':db' => $this->currentDatabase(true), ':tn' => $table_name];
+        $params = [':db' => $this->currentDatabase(true),];
         if (is_string($schema)) {
             $params[':ts'] = $schema;
+        }
+        if ($table_name && is_string($table_name)) {
+            $params[':tn'] = $table_name;
         }
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('SELECT false unique_column, tc.table_schema AS foreign_table_schema, tc.constraint_name "name", tc.table_name AS foreign_table_name, kcu.column_name AS foreign_column_name, '.
                                            'ccu.table_schema, ccu.table_name, ccu.column_name FROM information_schema.table_constraints AS tc '.
                                            'JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema '.
                                            'JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema '.
-                                           'WHERE ccu.table_catalog=:db AND tc.constraint_type = \'FOREIGN KEY\' AND ccu.table_name=:tn '.(is_string($schema) ? ' AND ccu.table_schema=:ts ' : ''));
+                                           'WHERE ccu.table_catalog=:db AND tc.constraint_type = \'FOREIGN KEY\' '.(is_string($schema) ? ' AND ccu.table_schema=:ts ' : '').
+                                           (is_string($table_name) ? ' AND ccu.table_name=:tn ' : ''));
         $stmt->execute($params);
         //echo $stmt->_debugQuery(true),"\n";
         return $this->mapForeignKeys(array_map(function($details){ return new ForeignKey($details, true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
