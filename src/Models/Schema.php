@@ -63,7 +63,10 @@ class Schema extends PropertyReader
     public function foreign_keys($table_name = null, $key = null, $table_check = false)
     {
         if (!isset($this->attributes['foreign_keys'])) {
-            $this->attributes['foreign_keys'] = Connection::getForeignKeys($this->name);
+            $keys= Connection::getForeignKeys($this->name);
+            foreach ($keys as $foreignKey) {
+                $this->addForeignKey($foreignKey);
+            }
         }
         if (is_string($table_name) && $table_name) {
             if (!isset($this->attributes['foreign_keys_set']) || !in_array($table_name, $this->attributes['foreign_keys_set'])) {
@@ -125,7 +128,7 @@ class Schema extends PropertyReader
      */
     public static function getColumn($schema_name, $table_name, $column_name, $db_name = null)
     {
-        $cols = array_filter(self::get($schema_name, $db_name)->columns, function($key) use ($table_name, $column_name){ return 0 === strcasecmp($key, $table_name.'.'.$column_name); }, ARRAY_FILTER_USE_KEY);
+        $cols = array_filter(self::get($schema_name, $db_name)->columns, function($key) use ($table_name, $column_name,$schema_name){ return 0 === strcasecmp($key, $schema_name.'.'.$table_name.'.'.$column_name); }, ARRAY_FILTER_USE_KEY);
         return !empty($cols) ? array_shift($cols) : null;
     }
 
