@@ -21,7 +21,7 @@ class MySQL extends Dbms
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('SELECT * FROM information_schema.TABLES t WHERE t.TABLE_SCHEMA= :db');
         $stmt->execute(['db' => $db ?: $this->currentDatabase(true)]);
-        return $this->mapTables(array_map(function($details) use ($db){ return new DBTable(array_merge(['db_name' => $this->currentDatabase(true)], $details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
+        return $this->mapTables(array_map(function ($details) use ($db) { return new DBTable(array_merge(['db_name' => $this->currentDatabase(true)], $details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
     /**
@@ -32,7 +32,7 @@ class MySQL extends Dbms
      *
      * @return ForeignKey[]
      */
-    public function getReferencedForeignKeys($table_name, $schema = null)
+    public function getReferencedForeignKeys($schema, $table_name = null)
     {
         $params = [':ts' => is_string($schema) ? $schema : $this->currentDatabase(true)];
         if (is_string($table_name)) {
@@ -45,7 +45,7 @@ class MySQL extends Dbms
         $ustmt = $this->connection->prepare('select cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA foreign_table_schema, cu.TABLE_NAME foreign_table_name, cu.COLUMN_NAME foreign_column_name, cu.REFERENCED_TABLE_SCHEMA table_schema, cu.REFERENCED_TABLE_NAME table_name, cu.REFERENCED_COLUMN_NAME column_name, true unique_column from information_schema.KEY_COLUMN_USAGE cu join information_schema.`COLUMNS` c on c.COLUMN_KEY=\'UNI\' and c.TABLE_NAME=cu.TABLE_NAME and c.TABLE_SCHEMA=cu.TABLE_SCHEMA and c.COLUMN_NAME=cu.COLUMN_NAME where cu.TABLE_SCHEMA=:ts'.(is_string($table_name) ? ' and cu.REFERENCED_TABLE_NAME=:tn ' : ''));
         $ustmt->execute($params);
         //echo $stmt->_debugQuery(true), "\n";
-        return $this->mapForeignKeys(array_map(function($details){ return new ForeignKey($details, false); }, array_merge($ustmt->fetchAll(\PDO::FETCH_ASSOC), $stmt->fetchAll(\PDO::FETCH_ASSOC))));
+        return $this->mapForeignKeys(array_map(function ($details) { return new ForeignKey($details, false); }, array_merge($ustmt->fetchAll(\PDO::FETCH_ASSOC), $stmt->fetchAll(\PDO::FETCH_ASSOC))));
     }
 
     /**
@@ -66,7 +66,7 @@ class MySQL extends Dbms
         $stmt = $this->connection->prepare('select false unique_column, cu.CONSTRAINT_NAME name, cu.TABLE_SCHEMA foreign_table_schema, cu.TABLE_NAME foreign_table_name, cu.COLUMN_NAME foreign_column_name, cu.REFERENCED_TABLE_SCHEMA table_schema, cu.REFERENCED_TABLE_NAME table_name, cu.REFERENCED_COLUMN_NAME column_name from information_schema.KEY_COLUMN_USAGE cu JOIN information_schema.COLUMNS c ON c.COLUMN_KEY <> \'UNI\' and c.TABLE_NAME=cu.TABLE_NAME and c.TABLE_SCHEMA=cu.TABLE_SCHEMA and c.COLUMN_NAME=cu.REFERENCED_COLUMN_NAME where cu.REFERENCED_TABLE_SCHEMA=:ts'.($table_name ? ' and cu.REFERENCED_TABLE_NAME = :tn' : ''));
         $stmt->execute($p);
         //echo $stmt->_debugQuery(true), "\n";
-        return $this->mapForeignKeys(array_map(function($details){ return new ForeignKey($details, true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
+        return $this->mapForeignKeys(array_map(function ($details) { return new ForeignKey($details, true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
     /**
@@ -83,9 +83,9 @@ class MySQL extends Dbms
         }
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare('select * from information_schema.`COLUMNS` c '.
-                                           'where c.TABLE_SCHEMA=:ts '.(is_string($table_name) ? ' and c.TABLE_NAME = :tn' : ''));
+            'where c.TABLE_SCHEMA=:ts '.(is_string($table_name) ? ' and c.TABLE_NAME = :tn' : ''));
         $stmt->execute($params);
-        return $this->mapColumns(array_map(function($details){ return new DBColumn($this->mapColumnsData($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
+        return $this->mapColumns(array_map(function ($details) { return new DBColumn($this->mapColumnsData($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
     protected function mapColumnsData(array $data)

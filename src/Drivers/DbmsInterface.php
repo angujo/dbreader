@@ -16,7 +16,7 @@ interface DbmsInterface
      *
      * @return Database
      */
-    public function currentDatabase($name=false);
+    public function currentDatabase($name = false);
 
     /**
      * @param string $db_name
@@ -42,16 +42,16 @@ interface DbmsInterface
      *
      * @return ForeignKey[]
      */
-    public function getReferencedForeignKeys($table_name, $schema = null);
+    public function getReferencedForeignKeys($schema, $table_name = null);
 
     /**
      * Foreign Keys referencing this column
      * Results in OneToMany relationship with foreign tables
      *
-     * @param $db_name
+     * @param $schema
      * @param $table_name
      *
      * @return ForeignKey[]
      */
-    public function getReferencingForeignKeys($table_name, $db_name = null);
+    public function getReferencingForeignKeys($schema, $table_name = null);
 }

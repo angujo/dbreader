@@ -52,57 +52,25 @@ class Schema extends PropertyReader
         return $this->attributes['columns'] = Connection::getColumns($this->name);
     }
 
+    public function getTableForeignKeys(DBTable$table)
+    {
+        return array_filter($this->foreign_keys, function (ForeignKey $foreignKey) use ($table) { return 0 === strcasecmp($foreignKey->table_reference, $table->reference); });
+    }
+
+    public function getColumnForeignKeys(DBColumn $column)
+    {
+        return array_filter($this->foreign_keys, function (ForeignKey $foreignKey) use ($column) { return 0 === strcasecmp($foreignKey->column_reference, $column->reference); });
+    }
+
     /**
-     * @param null|string $table_name
-     * @param null        $key
-     * @param bool        $table_check
-     *
      * @return ForeignKey[]|bool|null
      * @throws ReaderException
      */
-    public function foreign_keys($table_name = null, $key = null, $table_check = false)
+    protected function foreign_keys()
     {
-        if (!isset($this->attributes['foreign_keys'])) {
-            $keys= Connection::getForeignKeys($this->name);
-            foreach ($keys as $foreignKey) {
-                $this->addForeignKey($foreignKey);
-            }
-        }
-        if (is_string($table_name) && $table_name) {
-            if (!isset($this->attributes['foreign_keys_set']) || !in_array($table_name, $this->attributes['foreign_keys_set'])) {
-                return $table_check ? null : [];
-            }
-            if ($table_check) {
-                return true;
-            }
-            $determiner = $table_name.'.'.(null === $key ? '' : (int)$key.'.');
-            return array_values(array_filter($this->attributes['foreign_keys'], function($k) use ($determiner){ return 0 === stripos($k, $determiner); }, ARRAY_FILTER_USE_KEY));
-        }
-        return $this->attributes['foreign_keys'] = null === $table_name && isset($this->attributes['foreign_keys']) ? $this->attributes['foreign_keys'] : [];
+        return $this->attributes['foreign_keys'] =$this->attributes['foreign_keys']?? Connection::getForeignKeys($this->name);
     }
 
-    public function addForeignKey(ForeignKey $foreignKey)
-    {
-        if (!isset($this->attributes['foreign_keys_set']) || !in_array($foreignKey->table_name, $this->attributes['foreign_keys_set'])) {
-            $this->attributes['foreign_keys_set'][] = $foreignKey->table_name;
-        }
-        $this->attributes['foreign_keys'][$foreignKey->table_name.'.'.(int)$foreignKey->isOneToOne().'.'.$foreignKey->name] = $foreignKey;
-        return $this;
-    }
-
-    /**
-     * @param string      $schema_name
-     * @param null|string $table_name
-     *
-     * @param null        $db_name
-     *
-     * @return ForeignKey[]
-     * @throws ReaderException
-     */
-    public static function getForeignKeys($schema_name, $table_name = null, $db_name = null)
-    {
-        return self::get($schema_name, $db_name)->foreign_keys($table_name);
-    }
 
     /**
      * @param string $schema_name
@@ -114,7 +82,7 @@ class Schema extends PropertyReader
      */
     public static function getColumns($schema_name, $table_name, $db_name = null)
     {
-        return array_filter(self::get($schema_name, $db_name)->columns, function($key) use ($table_name){ return 0 === stripos($key, $table_name.'.'); }, ARRAY_FILTER_USE_KEY);
+        return array_filter(self::get($schema_name, $db_name)->columns, function ($key) use ($table_name) { return 0 === stripos($key, $table_name.'.'); }, ARRAY_FILTER_USE_KEY);
     }
 
     /**
@@ -128,7 +96,7 @@ class Schema extends PropertyReader
      */
     public static function getColumn($schema_name, $table_name, $column_name, $db_name = null)
     {
-        $cols = array_filter(self::get($schema_name, $db_name)->columns, function($key) use ($table_name, $column_name,$schema_name){ return 0 === strcasecmp($key, $schema_name.'.'.$table_name.'.'.$column_name); }, ARRAY_FILTER_USE_KEY);
+        $cols = array_filter(self::get($schema_name, $db_name)->columns, function ($key) use ($table_name, $column_name, $schema_name) { return 0 === strcasecmp($key, $schema_name.'.'.$table_name.'.'.$column_name); }, ARRAY_FILTER_USE_KEY);
         return !empty($cols) ? array_shift($cols) : null;
     }
 
@@ -142,7 +110,7 @@ class Schema extends PropertyReader
      */
     public static function getTable($schema_name, $table_name, $db_name = null)
     {
-        $tabs = array_filter(self::get($schema_name, $db_name)->tables, function(DBTable $table) use ($table_name){ return 0 === strcasecmp($table->name, $table_name); });
+        $tabs = array_filter(self::get($schema_name, $db_name)->tables, function (DBTable $table) use ($table_name) { return 0 === strcasecmp($table->name, $table_name); });
         return !empty($tabs) ? array_shift($tabs) : null;
     }
 

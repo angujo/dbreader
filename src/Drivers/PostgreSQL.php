@@ -52,7 +52,7 @@ class PostgreSQL extends Dbms
      *
      * @return ForeignKey[]
      */
-    public function getReferencedForeignKeys($table_name, $schema = null)
+    public function getReferencedForeignKeys( $schema,$table_name = null)
     {
         $params = [':db' => $this->currentDatabase(true),];
         $ts     = ['', ''];
@@ -109,7 +109,7 @@ class PostgreSQL extends Dbms
      */
     public function getColumns($schema = null, $table_name = null)
     {
-        $params = ['db' => $this->currentDatabase(true) ? $this->current_db->name : null];
+        $params = ['db' => $this->currentDatabase(true)];
         $query  = 'select cmt."comment", c.is_nullable=\'YES\' is_nullable, c.table_name, c.table_schema, c.column_name, c.column_default,c.character_set_name,c.data_type,c.udt_name,c.numeric_scale, t.constraint_type,  '.
             's."increment"::double precision>0 is_auto_increment from information_schema."columns" c left join (select tc.table_name,tc.table_schema,ccu.column_name,tc.constraint_type  '.
             'from information_schema.table_constraints tc join information_schema.constraint_column_usage ccu on ccu.constraint_name=tc.constraint_name and ccu.table_name=tc.table_name and '.
@@ -130,7 +130,7 @@ class PostgreSQL extends Dbms
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare($query);
         $stmt->execute($params);
-        echo $stmt->_debugQuery(true), "\n";
+        //echo $stmt->_debugQuery(true), "\n";
         return $this->mapColumns(array_map(function($details){ return new DBColumn($this->mapColumnsData($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 

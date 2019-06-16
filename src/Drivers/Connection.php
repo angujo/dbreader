@@ -15,7 +15,7 @@ use Angujo\DBReader\Models\Schema;
  *
  * @package Angujo\DBReader\Drivers
  *
- * @method static Database|string|null currentDatabase($name=false);
+ * @method static Database|string|null currentDatabase($name = false);
  * @method static Database changeDatabase($db_name);
  * @method static Schema[] getSchemas();
  * @method static DBTable[] getTables($schema_name);
@@ -27,7 +27,7 @@ class Connection
 {
     private static $me;
     /**
-     * @var Dbms
+     * @var PostgreSQL|MySQL
      */
     private $dbms;
 
@@ -98,6 +98,6 @@ class Connection
     public static function getForeignKeys($schema, $table_name = null)
     {
         self::$me = self::$me ?: new self();
-        return array_merge(self::$me->dbms->getReferencedForeignKeys($table_name, $schema), self::$me->dbms->getReferencingForeignKeys($table_name, $schema));
+        return array_merge(self::$me->dbms->getReferencedForeignKeys($schema, $table_name), self::$me->dbms->getReferencingForeignKeys($schema, $table_name));
     }
 }
