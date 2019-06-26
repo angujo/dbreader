@@ -8,40 +8,29 @@ use Angujo\DBReader\Drivers\DataType;
 
 /**
  * Class DBColumn
+ *
  * @package Angujo\DBReader\Models
  *
- * @property string            $schema_name
- * @property string|string[]   $data_type
- * @property string            $table_name
- * @property string            $name
- * @property int               $ordinal_position
- * @property string|double|int $default
- * @property boolean           $is_nullable
- * @property null|int          $character_maximum_length
- * @property null|int          $character_octet_length
- * @property null|int          $numeric_precision
- * @property null|int          $numeric_scale
- * @property int               $precision
- * @property int               $scale
- * @property string            $datetime_precision
- * @property string            $charset
- * @property string            $collation_name
- * @property string            $column_type
- * @property string            $column_key
- * @property string            $extra
- * @property string            $comment
- * @property string            $generation_expression
- * @property boolean           $is_primary
- * @property boolean           $is_auto_increment
- * @property int               $decimal_places
- * @property string            $reference
+ * @property string                 $schema_name
+ * @property string|string[]        $data_type
+ * @property string                 $table_name
+ * @property string                 $name
+ * @property int                    $ordinal
+ * @property string|double|int|null $default
+ * @property boolean                $is_nullable
+ * @property null|int               $length
+ * @property string                 $comment
  *
- * @property DataType          $type
- * @property DBTable           $table
- * @property Database          $database
- * @property Schema            $schema
- * @property ForeignKey[]      $foreign_keys
- * @property ForeignKey        $foreign_key
+ * @property boolean                $is_primary
+ * @property boolean                $is_auto_increment
+ * @property string                 $reference
+ *
+ * @property DataType               $type
+ * @property DBTable                $table
+ * @property Database               $database
+ * @property Schema                 $schema
+ * @property ForeignKey[]           $foreign_keys
+ * @property ForeignKey             $foreign_key
  */
 class DBColumn extends PropertyReader
 {
@@ -65,14 +54,6 @@ class DBColumn extends PropertyReader
         return Schema::getTable($this->schema_name, $this->table_name);
     }
 
-    private function numeric()
-    {
-        if (!preg_match('/(\()(\d+)(,)?(\d+)?(\))/', $this->column_type, $output_array)) {
-            return [0, 0];
-        }
-        return [isset($output_array[2]) && is_numeric($output_array[2]) ? $output_array[2] : 0, isset($output_array[4]) && is_numeric($output_array[4]) ? $output_array[4] : 0];
-    }
-
     protected function foreign_keys()
     {
         return $this->schema->getColumnForeignKeys($this);
@@ -82,21 +63,6 @@ class DBColumn extends PropertyReader
     {
         $fk = $this->foreign_keys;
         return array_shift($fk);
-    }
-
-    protected function precision()
-    {
-        return $this->numeric()[1];
-    }
-
-    protected function scale()
-    {
-        return $this->numeric()[0];
-    }
-
-    protected function name()
-    {
-        return $this->attributes['column_name'];
     }
 
     /**

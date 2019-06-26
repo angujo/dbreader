@@ -13,6 +13,14 @@ use Angujo\DBReader\Models\Schema;
 class PostgreSQL extends Dbms
 {
     protected $functions = ['now', 'nextval', 'currval', 'setval',];
+    private static $tables_query = 'SELECT t.schemaname schema_name, t.tablename "name", true is_table, false is_view FROM pg_catalog.pg_tables';
+    private static $views_query = 'SELECT t.schemaname schema_name, t.viewname "name", false is_table, true is_view FROM pg_catalog.pg_views';
+    private static $columns_query = 'select n.nspname schema_name,t.relname table_name, ty.typname data_type, c.attname "name", c.attlen "length", c.attnotnull = false is_nullable, c.attnum ordinal, cmt.description "comment", '.
+    'pg_get_expr(d.adbin, d.adrelid)::information_schema.character_data "default" from pg_catalog.pg_attribute c join pg_catalog.pg_class t on t.oid=c.attrelid join pg_catalog.pg_namespace n on n.oid=t.relnamespace '.
+    'join pg_catalog.pg_type ty on ty.oid=c.atttypid left join pg_catalog.pg_attrdef d on d.adnum=c.attnum and d.adrelid=t.oid '.
+    'left join pg_catalog.pg_description cmt on cmt.objoid=t.oid and cmt.objsubid=c.attnum '.
+    'where not c.attisdropped and NOT pg_is_other_temp_schema(n.oid) AND c.attnum > 0 AND '.
+    '(t.relkind = ANY (ARRAY[\'r\'::"char", \'v\'::"char", \'f\'::"char", \'p\'::"char"]))';
 
     /**
      * @return Schema[]
@@ -31,17 +39,28 @@ class PostgreSQL extends Dbms
      *
      * @return DBTable[]
      */
-    public function getTables($schema = null)
+    public function getTables($schema)
     {
-        $params = [':db' => $this->currentDatabase(true)];
-        if (is_string($schema)) {
-            $params[':ts'] = $schema;
-        }
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare('select * from information_schema."tables" t where t.table_schema not like \'pg_%\' and t.table_schema not in (\'information_schema\') and t.table_catalog = :db'.(is_string($schema) ? ' and t.table_schema = :ts' : ''));
-        $stmt->execute($params);
+        $stmt = $this->connection->prepare(implode(' ', [self::$tables_query, 'WHERE schemaname = :ts']));
+        $stmt->execute([':ts' => $schema]);
+        $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         //echo $stmt->_debugQuery(true),"\n";
-        return $this->mapTables(array_map(function($details){ return new DBTable(array_merge(['db_name' => $this->currentDatabase(true)], $details), true); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
+        return $this->mapTables(array_map(function($details){
+            return new DBTable(array_merge(['db_name' => $this->currentDatabase(true)], $details), true);
+        }, $data));
+    }
+
+    public function getViews($schema)
+    {
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$views_query, 'WHERE schemaname = :ts']));
+        $stmt->execute([':ts' => $schema]);
+        $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        //echo $stmt->_debugQuery(true),"\n";
+        return $this->mapTables(array_map(function($details){
+            return new DBTable(array_merge(['db_name' => $this->currentDatabase(true)], $details), true);
+        }, $data));
     }
 
     /**
@@ -52,7 +71,7 @@ class PostgreSQL extends Dbms
      *
      * @return ForeignKey[]
      */
-    public function getReferencedForeignKeys( $schema,$table_name = null)
+    public function getReferencedForeignKeys($schema, $table_name = null)
     {
         $params = [':db' => $this->currentDatabase(true),];
         $ts     = ['', ''];
@@ -132,6 +151,33 @@ class PostgreSQL extends Dbms
         $stmt->execute($params);
         //echo $stmt->_debugQuery(true), "\n";
         return $this->mapColumns(array_map(function($details){ return new DBColumn($this->mapColumnsData($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
+    }
+
+    /**
+     * @param string $schema
+     *
+     * @return array
+     */
+    protected function schemaColumns($schema)
+    {
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$tables_query, 'AND n.nspname = :ts']));
+        $stmt->execute([':ts' => $schema]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @param string $schema
+     * @param string $table_name
+     *
+     * @return array
+     */
+    protected function tableColumns($schema, $table_name)
+    {
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$tables_query, 'AND n.nspname = :ts', 'AND t.relname = :tn']));
+        $stmt->execute([':ts' => $schema, ':tn' => $table_name]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     protected function mapColumnsData(array $data)

@@ -7,10 +7,25 @@ namespace Angujo\DBReader\Models;
 use Angujo\DBReader\Drivers\Helper;
 use Angujo\DBReader\Drivers\ReaderException;
 
+/**
+ * Class PropertyReader
+ *
+ * @package Angujo\DBReader\Models
+ *          Allows access to variables and methods through property names
+ */
 abstract class PropertyReader
 {
+    /**
+     * Attributes with keys as property names
+     * @var array
+     */
     protected $attributes = [];
 
+    /**
+     * PropertyReader constructor.
+     *
+     * @param array $details
+     */
     protected function __construct(array $details)
     {
         $this->attributes = array_change_key_case($details, CASE_LOWER);
@@ -33,12 +48,19 @@ abstract class PropertyReader
         throw new ReaderException('Invalid property "'.$name.'" in '.static::class.'!');
     }
 
+    /**
+     * By any chance we are checking
+     * @param $name
+     *
+     * @return bool
+     */
     public function __isset($name)
     {
         return method_exists($this, $name) || isset($this->values[$name]);
     }
 
     /**
+     * We don't allow setting up properties
      * @param $name
      *
      * @throws ReaderException
@@ -48,12 +70,21 @@ abstract class PropertyReader
         throw new ReaderException('Not allowed! Cannot assign READ_ONLY attribute!');
     }
 
+    /**
+     * Quicker way to through sources and get the property value
+     * @param      $column_name
+     * @param null $default
+     *
+     * @return mixed|null
+     */
     protected function getDetail($column_name, $default = null)
     {
         return array_key_exists(strtolower($column_name), $this->attributes) ? $this->attributes[$column_name] : $default;
     }
 
     /**
+     * Load any other relationship and avail it
+     *
      * @param string|array ...$params
      *
      * @return static
@@ -83,6 +114,7 @@ abstract class PropertyReader
     }
 
     /**
+     * Load any other relationship and avail it
      * @param PropertyReader|array $object
      * @param string               $param
      *
@@ -101,6 +133,11 @@ abstract class PropertyReader
         return $object;
     }
 
+    /**
+     * Get all loaded properties so far,
+     * as Array
+     * @return array
+     */
     public function toArray()
     {
         return $this->attributes;
