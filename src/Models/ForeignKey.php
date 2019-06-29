@@ -33,6 +33,7 @@ class ForeignKey extends PropertyReader
 {
     /**
      * Should only hold 1=One to one or 2=One to many
+     *
      * @var null|int
      */
     public $relation = null;
@@ -96,7 +97,12 @@ class ForeignKey extends PropertyReader
         return Schema::getColumn($this->foreign_schema_name, $this->foreign_table_name, $this->foreign_column_name);
     }
 
-    protected function column_reference() { return $this->schema_name.'.'.$this->table_name.'.'.$this->column_name; }
+    protected function column_reference(){ return $this->schema_name.'.'.$this->table_name.'.'.$this->column_name; }
 
-    protected function table_reference() { return $this->schema_name.'.'.$this->table_name; }
+    protected function table_reference(){ return $this->schema_name.'.'.$this->table_name; }
+
+    protected function is_unique()
+    {
+        return $this->column->is_unique;
+    }
 }
