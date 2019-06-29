@@ -46,17 +46,17 @@ abstract class Dbms implements DbmsInterface
 
     protected function mapTables(array $tables)
     {
-        return array_combine(array_map(function (DBTable $table) { return $table->schema_name.'.'.$table->name; }, $tables), $tables);
+        return array_combine(array_map(function(DBTable $table){ return $table->schema_name.'.'.$table->name; }, $tables), $tables);
     }
 
     protected function mapColumns(array $columns)
     {
-        return array_combine(array_map(function (DBColumn $column) { return implode('.', [$column->schema_name, $column->table_name, $column->name]); }, $columns), $columns);
+        return array_combine(array_map(function(DBColumn $column){ return implode('.', [$column->schema_name, $column->table_name, $column->name]); }, $columns), $columns);
     }
 
     protected function mapForeignKeys(array $keys)
     {
-        return array_combine(array_map(function (ForeignKey $foreignKey) { return implode('.', [$foreignKey->schema_name, $foreignKey->table_name, $foreignKey->name]); }, $keys), $keys);
+        return array_combine(array_map(function(ForeignKey $foreignKey){ return implode('.', [$foreignKey->schema_name, $foreignKey->table_name, $foreignKey->name]); }, $keys), $keys);
     }
 
     public function changeDatabase($db_name)
