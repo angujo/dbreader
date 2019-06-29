@@ -18,6 +18,7 @@ namespace Angujo\DBReader\Models;
  * @property string   $column_reference
  * @property string   $table_reference
  * @property bool     $unique_column
+ * @property bool     $is_unique
  *
  * @property DBTable  $table
  * @property DBTable  $foreign_table
