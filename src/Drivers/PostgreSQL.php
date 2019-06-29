@@ -6,6 +6,7 @@ namespace Angujo\DBReader\Drivers;
 
 use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
+use Angujo\DBReader\Models\DBConstraint;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
 use Angujo\DBReader\Models\Schema;
@@ -16,11 +17,47 @@ class PostgreSQL extends Dbms
     private static $tables_query = 'SELECT t.schemaname schema_name, t.tablename "name", true is_table, false is_view FROM pg_catalog.pg_tables';
     private static $views_query = 'SELECT t.schemaname schema_name, t.viewname "name", false is_table, true is_view FROM pg_catalog.pg_views';
     private static $columns_query = 'select n.nspname schema_name,t.relname table_name, ty.typname data_type, c.attname "name", c.attlen "length", c.attnotnull = false is_nullable, c.attnum ordinal, cmt.description "comment", '.
-    'pg_get_expr(d.adbin, d.adrelid)::information_schema.character_data "default" from pg_catalog.pg_attribute c join pg_catalog.pg_class t on t.oid=c.attrelid join pg_catalog.pg_namespace n on n.oid=t.relnamespace '.
+    'pg_get_expr(d.adbin, d.adrelid)::information_schema.character_data "default", st.oid is not null is_auto_increment '.
+    'from pg_catalog.pg_attribute c '.
+    'join pg_catalog.pg_class t on t.oid=c.attrelid join pg_catalog.pg_namespace n on n.oid=t.relnamespace '.
     'join pg_catalog.pg_type ty on ty.oid=c.atttypid left join pg_catalog.pg_attrdef d on d.adnum=c.attnum and d.adrelid=t.oid '.
     'left join pg_catalog.pg_description cmt on cmt.objoid=t.oid and cmt.objsubid=c.attnum '.
+    'left join pg_catalog.pg_type st on pg_get_serial_sequence(t.relname,c.attname)=n.nspname||\'.\'||st.typname '.
     'where not c.attisdropped and NOT pg_is_other_temp_schema(n.oid) AND c.attnum > 0 AND '.
     '(t.relkind = ANY (ARRAY[\'r\'::"char", \'v\'::"char", \'f\'::"char", \'p\'::"char"]))';
+    private static $constraints_query = 'select n.nspname schema_name, t.relname table_name, a.attname column_name, c.conname "name", '.
+    '\'f\'::character=c.contype is_foreign_key, \'u\'::character=c.contype is_unique_key, \'p\'::character=c.contype is_primary_key '.
+    'from pg_catalog.pg_constraint c join pg_catalog.pg_namespace n on n.oid=c.connamespace join pg_catalog.pg_class t on t.oid=conrelid '.
+    'join pg_catalog.pg_attribute a on a.attrelid=t.oid and (a.attnum = any (c.conkey)) '.
+    'where (c.contype = any (array[\'p\'::character, \'u\'::character]))';
+
+    /**
+     * @param      $schema
+     * @param null $table_name
+     *
+     * @return DBConstraint[]
+     */
+    public function constraints($schema, $table_name = null)
+    {
+        $data = $table_name ? $this->tableConstraints($schema, $table_name) : $this->schemaConstraints($schema);
+        return array_map(function($d){ return new DBConstraint($d); }, $data);
+    }
+
+    private function schemaConstraints($schema)
+    {
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$constraints_query, 'AND n.nspname = :ts',]));
+        $stmt->execute([':ts' => $schema,]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    private function tableConstraints($schema, $table_name)
+    {
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$constraints_query, 'AND n.nspname = :ts', 'AND t.relname = :tn']));
+        $stmt->execute([':ts' => $schema, ':tn' => $table_name]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 
     /**
      * @return Schema[]
@@ -126,31 +163,10 @@ class PostgreSQL extends Dbms
      *
      * @return DBColumn[]
      */
-    public function getColumns($schema = null, $table_name = null)
+    public function getColumns($schema, $table_name = null)
     {
-        $params = ['db' => $this->currentDatabase(true)];
-        $query  = 'select cmt."comment", c.is_nullable=\'YES\' is_nullable, c.table_name, c.table_schema, c.column_name, c.column_default,c.character_set_name,c.data_type,c.udt_name,c.numeric_scale, t.constraint_type,  '.
-            's."increment"::double precision>0 is_auto_increment from information_schema."columns" c left join (select tc.table_name,tc.table_schema,ccu.column_name,tc.constraint_type  '.
-            'from information_schema.table_constraints tc join information_schema.constraint_column_usage ccu on ccu.constraint_name=tc.constraint_name and ccu.table_name=tc.table_name and '.
-            'ccu.table_schema=tc.table_schema and tc.constraint_type= \'PRIMARY KEY\') t on t.table_name=c.table_name and t.column_name=c.column_name and t.table_schema=c.table_schema '.
-            'left join information_schema."sequences" s on s.sequence_schema=c.table_schema and c.column_default ilike concat(\'nextval(\'\'\',s.sequence_name,\'\'\'::regclass)\') '.
-            'left join (select n.nspname,t.relname,d.objsubid, d.description "comment" from pg_catalog.pg_class t JOIN pg_namespace n ON n.oid = t.relnamespace join pg_catalog.pg_description d on d.objoid=t.oid) cmt '.
-            'on c.table_schema=cmt.nspname and cmt.relname=c.table_name and c.ordinal_position=cmt.objsubid '.
-            'where c.table_schema not like \'pg_%\' and c.table_schema not in (\'information_schema\') and c.table_catalog = :db '.
-            (is_string($schema) ? ' AND c.TABLE_SCHEMA=:ts' : '').
-            (is_string($table_name) ? ' AND c.TABLE_NAME = :tn' : '').
-            ' order by c.table_name,c.ordinal_position;';
-        if (is_string($schema)) {
-            $params[':ts'] = $schema;
-        }
-        if (is_string($table_name)) {
-            $params[':tn'] = $table_name;
-        }
-        /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare($query);
-        $stmt->execute($params);
-        //echo $stmt->_debugQuery(true), "\n";
-        return $this->mapColumns(array_map(function($details){ return new DBColumn($this->mapColumnsData($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
+        $data = $table_name ? $this->tableColumns($schema, $table_name) : $this->schemaColumns($schema);
+        return $this->mapColumns(array_map(function($details){ return new DBColumn($details); }, $data));
     }
 
     /**
@@ -161,7 +177,7 @@ class PostgreSQL extends Dbms
     protected function schemaColumns($schema)
     {
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare(implode(' ', [self::$tables_query, 'AND n.nspname = :ts']));
+        $stmt = $this->connection->prepare(implode(' ', [self::$columns_query, 'AND n.nspname = :ts']));
         $stmt->execute([':ts' => $schema]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
@@ -175,7 +191,7 @@ class PostgreSQL extends Dbms
     protected function tableColumns($schema, $table_name)
     {
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare(implode(' ', [self::$tables_query, 'AND n.nspname = :ts', 'AND t.relname = :tn']));
+        $stmt = $this->connection->prepare(implode(' ', [self::$columns_query, 'AND n.nspname = :ts', 'AND t.relname = :tn']));
         $stmt->execute([':ts' => $schema, ':tn' => $table_name]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }

@@ -31,7 +31,7 @@ interface DbmsInterface
      *
      * @return DBColumn[]
      */
-    public function getColumns($schema = null, $table_name = null);
+    public function getColumns($schema, $table_name = null);
 
     /**
      * Directly referenced Foreign Keys

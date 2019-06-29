@@ -5,6 +5,7 @@ namespace Angujo\DBReader\Models;
 
 
 use Angujo\DBReader\Drivers\DataType;
+use Angujo\DBReader\Drivers\ReaderException;
 
 /**
  * Class DBColumn
@@ -67,7 +68,7 @@ class DBColumn extends PropertyReader
 
     /**
      * @return DataType
-     * @throws \Angujo\DBReader\Drivers\ReaderException
+     * @throws ReaderException
      */
     protected function type()
     {
