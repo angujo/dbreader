@@ -14,8 +14,8 @@ use Angujo\DBReader\Models\Schema;
 class PostgreSQL extends Dbms
 {
     protected $functions = ['now', 'nextval', 'currval', 'setval',];
-    private static $tables_query = 'SELECT t.schemaname schema_name, t.tablename "name", true is_table, false is_view FROM pg_catalog.pg_tables';
-    private static $views_query = 'SELECT t.schemaname schema_name, t.viewname "name", false is_table, true is_view FROM pg_catalog.pg_views';
+    private static $tables_query = 'SELECT t.schemaname schema_name, t.tablename "name", true is_table, false is_view FROM pg_catalog.pg_tables t';
+    private static $views_query = 'SELECT t.schemaname schema_name, t.viewname "name", false is_table, true is_view FROM pg_catalog.pg_views t';
     private static $columns_query = 'select n.nspname schema_name,t.relname table_name, ty.typname data_type, c.attname "name", c.attlen "length", c.attnotnull = false is_nullable, c.attnum ordinal, cmt.description "comment", '.
     'pg_get_expr(d.adbin, d.adrelid)::information_schema.character_data "default", st.oid is not null is_auto_increment '.
     'from pg_catalog.pg_attribute c '.
@@ -30,6 +30,82 @@ class PostgreSQL extends Dbms
     'from pg_catalog.pg_constraint c join pg_catalog.pg_namespace n on n.oid=c.connamespace join pg_catalog.pg_class t on t.oid=conrelid '.
     'join pg_catalog.pg_attribute a on a.attrelid=t.oid and (a.attnum = any (c.conkey)) '.
     'where (c.contype = any (array[\'p\'::character, \'u\'::character]))';
+    private static $toone_foreign_queries = 'select n.nspname schema_name, t.relname table_name, a.attname column_name, c.conname "name", rn.nspname referenced_schema_name, rt.relname referenced_table_name, '.
+    'ra.attname referenced_column_name '.
+    'from pg_catalog.pg_constraint c join pg_catalog.pg_namespace n on n.oid=c.connamespace join pg_catalog.pg_class t on t.oid=c.conrelid '.
+    'join pg_catalog.pg_attribute a on a.attrelid=t.oid and a.attnum = any (c.conkey) join pg_catalog.pg_class rt on rt.oid=c.confrelid '.
+    'join pg_catalog.pg_namespace rn on rn.oid=rt.relnamespace join pg_catalog.pg_attribute ra on ra.attrelid=rt.oid and ra.attnum = any (c.confkey) '.
+    'left join pg_catalog.pg_constraint uc on n.oid=uc.connamespace and a.attnum = any (uc.conkey) and t.oid=uc.conrelid and not uc.contype = any (array[\'u\'::character,\'p\'::character]) '.
+    'where (c.contype =\'f\'::character)';
+    private static $tomany_foreign_queries = 'select rn.nspname schema_name, rt.relname table_name, ra.attname column_name, c.conname "name", n.nspname referenced_schema_name, t.relname referenced_table_name, a.attname referenced_column_name '.
+    'from pg_catalog.pg_constraint c '.
+    'join pg_catalog.pg_namespace n on n.oid=c.connamespace join pg_catalog.pg_class t on t.oid=c.conrelid join pg_catalog.pg_attribute a on a.attrelid=t.oid and a.attnum = any (c.conkey) '.
+    'join pg_catalog.pg_class rt on rt.oid=c.confrelid join pg_catalog.pg_namespace rn on rn.oid=rt.relnamespace '.
+    'join pg_catalog.pg_attribute ra on ra.attrelid=rt.oid and ra.attnum = any (c.confkey) '.
+    'join pg_catalog.pg_constraint uc on rn.oid=uc.connamespace and ra.attnum = any (uc.conkey) and rt.oid=uc.conrelid and uc.contype = any (array[\'u\'::character,\'p\'::character]) '.
+    'where (c.contype =\'f\'::character)';
+
+    /**
+     * One to One
+     *
+     * @param      $schema
+     * @param null $table_name
+     *
+     * @return ForeignKey[]
+     */
+    public function getReferencedForeignKeys($schema, $table_name = null)
+    {
+        $data = $table_name ? $this->tableToOneForeignKeys($schema, $table_name) : $this->schemaToOneForeignKeys($schema);
+        return array_map(function($d){ return new ForeignKey($d,false); }, $data);
+    }
+
+    private function tableToOneForeignKeys($schema, $table_name)
+    {
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$toone_foreign_queries, 'AND n.nspname = :ts', 'AND t.relname = :tn',]));
+        $stmt->execute([':ts' => $schema, ':tn' => $table_name,]);
+        //echo $stmt->_debugQuery(true), "\n";
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    private function schemaToOneForeignKeys($schema)
+    {
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$toone_foreign_queries, 'AND n.nspname = :ts',]));
+        $stmt->execute([':ts' => $schema,]);
+        //echo $stmt->_debugQuery(true), "\n";
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * One to Many
+     *
+     * @param      $schema
+     * @param null $table_name
+     *
+     * @return ForeignKey[]|array
+     */
+    public function getReferencingForeignKeys($schema, $table_name = null)
+    {
+        $data = $table_name ? $this->tableToManyForeignKeys($schema, $table_name) : $this->schemaToManyForeignKeys($schema);
+        return array_map(function($d){ return new ForeignKey($d,true); }, $data);
+    }
+
+    private function tableToManyForeignKeys($schema, $table_name)
+    {
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$tomany_foreign_queries, 'AND n.nspname = :ts', 'AND t.relname = :tn',]));
+        $stmt->execute([':ts' => $schema, ':tn' => $table_name,]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    private function schemaToManyForeignKeys($schema)
+    {
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$tomany_foreign_queries, 'AND n.nspname = :ts',]));
+        $stmt->execute([':ts' => $schema,]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 
     /**
      * @param      $schema
@@ -82,7 +158,7 @@ class PostgreSQL extends Dbms
         $stmt = $this->connection->prepare(implode(' ', [self::$tables_query, 'WHERE schemaname = :ts']));
         $stmt->execute([':ts' => $schema]);
         $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        //echo $stmt->_debugQuery(true),"\n";
+        // echo $stmt->_debugQuery(true),"\n";
         return $this->mapTables(array_map(function($details){
             return new DBTable(array_merge(['db_name' => $this->currentDatabase(true)], $details), true);
         }, $data));
@@ -108,7 +184,7 @@ class PostgreSQL extends Dbms
      *
      * @return ForeignKey[]
      */
-    public function getReferencedForeignKeys($schema, $table_name = null)
+    public function getReferencedForeignKeysxx($schema, $table_name = null)
     {
         $params = [':db' => $this->currentDatabase(true),];
         $ts     = ['', ''];
@@ -136,7 +212,7 @@ class PostgreSQL extends Dbms
      *
      * @return ForeignKey[]
      */
-    public function getReferencingForeignKeys($schema, $table_name = null)
+    public function getReferencingForeignKeysxx($schema, $table_name = null)
     {
         $params = [':db' => $this->currentDatabase(true),];
         if (is_string($schema)) {

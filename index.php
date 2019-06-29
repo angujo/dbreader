@@ -9,6 +9,8 @@ use Angujo\DBReader\Models\Schema;
 //echo '<pre>';
 $db = Connection::currentDatabase();
 
+//print_r($db);
+
 print_r(array_map(function(Schema $schema){
     return $schema->foreign_keys;
 }, $db->schemas));
