@@ -17,6 +17,7 @@ abstract class PropertyReader
 {
     /**
      * Attributes with keys as property names
+     *
      * @var array
      */
     protected $attributes = [];
@@ -43,13 +44,14 @@ abstract class PropertyReader
             return $this->getDetail($name);
         }
         if (method_exists($this, $name)) {
-            return $this->{$name}();
+            return $this->attributes[$name] = $this->{$name}();
         }
         throw new ReaderException('Invalid property "'.$name.'" in '.static::class.'!');
     }
 
     /**
      * By any chance we are checking
+     *
      * @param $name
      *
      * @return bool
@@ -61,6 +63,7 @@ abstract class PropertyReader
 
     /**
      * We don't allow setting up properties
+     *
      * @param $name
      *
      * @throws ReaderException
@@ -72,6 +75,7 @@ abstract class PropertyReader
 
     /**
      * Quicker way to through sources and get the property value
+     *
      * @param      $column_name
      * @param null $default
      *
@@ -115,6 +119,7 @@ abstract class PropertyReader
 
     /**
      * Load any other relationship and avail it
+     *
      * @param PropertyReader|array $object
      * @param string               $param
      *
@@ -136,6 +141,7 @@ abstract class PropertyReader
     /**
      * Get all loaded properties so far,
      * as Array
+     *
      * @return array
      */
     public function toArray()

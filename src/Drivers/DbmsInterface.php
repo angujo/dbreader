@@ -6,6 +6,7 @@ namespace Angujo\DBReader\Drivers;
 
 use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
+use Angujo\DBReader\Models\DBConstraint;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
 
@@ -54,4 +55,14 @@ interface DbmsInterface
      * @return ForeignKey[]
      */
     public function getReferencingForeignKeys($schema, $table_name = null);
+
+    /**
+     * Get Constraints
+     *
+     * @param string      $schema
+     * @param string|null $table_name
+     *
+     * @return DBConstraint[]
+     */
+    public function getConstraints($schema, $table_name = null);
 }

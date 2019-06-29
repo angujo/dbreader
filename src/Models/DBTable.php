@@ -25,6 +25,7 @@ use Angujo\DBReader\Drivers\ReaderException;
  * @property ForeignKey[] $foreign_keys_one_to_many
  * @property DBColumn[]   $columns
  * @property DBColumn[]   $primary_columns
+ * @property DBConstraint[]   $constraints
  */
 class DBTable extends PropertyReader
 {
@@ -47,6 +48,11 @@ class DBTable extends PropertyReader
     protected function schema()
     {
         return $this->database()->getSchema($this->schema_name);
+    }
+
+    protected function constraints()
+    {
+        return $this->schema->getTableConstraints($this);
     }
 
     /**

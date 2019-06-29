@@ -113,7 +113,7 @@ class PostgreSQL extends Dbms
      *
      * @return DBConstraint[]
      */
-    public function constraints($schema, $table_name = null)
+    public function getConstraints($schema, $table_name = null)
     {
         $data = $table_name ? $this->tableConstraints($schema, $table_name) : $this->schemaConstraints($schema);
         return array_map(function($d){ return new DBConstraint($d); }, $data);

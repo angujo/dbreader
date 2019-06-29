@@ -19,6 +19,7 @@ use Angujo\DBReader\Drivers\ReaderException;
  * @property int                    $ordinal
  * @property string|double|int|null $default
  * @property boolean                $is_nullable
+ * @property boolean                $is_unique
  * @property null|int               $length
  * @property string                 $comment
  *
@@ -72,11 +73,21 @@ class DBColumn extends PropertyReader
      */
     protected function type()
     {
-        return $this->attributes['type'] = isset($this->attributes['type']) ? $this->attributes['type'] : new DataType($this->attributes['data_type']);
+        return new DataType($this->attributes['data_type']);
     }
 
     protected function reference()
     {
         return implode('.', [$this->schema_name, $this->table_name, $this->name]);
+    }
+
+    protected function is_primary()
+    {
+        return count(array_filter($this->table->constraints, function(DBConstraint $constraint){ return $constraint->is_primary_key && 0 === strcasecmp($this->reference, $constraint->column_reference); })) > 0;
+    }
+
+    protected function is_unique()
+    {
+        return count(array_filter($this->table->constraints, function(DBConstraint $constraint){ return $constraint->is_unique_key && 0 === strcasecmp($this->reference, $constraint->column_reference); })) > 0;
     }
 }

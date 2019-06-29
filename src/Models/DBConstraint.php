@@ -13,6 +13,9 @@ namespace Angujo\DBReader\Models;
  * @property string   $schema_name
  * @property string   $table_name
  * @property string   $column_name
+ * @property string   $table_reference
+ * @property string   $column_reference
+ * @property string   $reference
  * @property boolean  $is_primary_key
  * @property boolean  $is_unique_key
  * @property boolean  $is_foreign_key
@@ -41,5 +44,20 @@ class DBConstraint extends PropertyReader
     protected function column()
     {
         return $this->table->getColumn($this->column_name);
+    }
+
+    public function table_reference()
+    {
+        return implode('.', [$this->schema_name, $this->table_name]);
+    }
+
+    public function column_reference()
+    {
+        return implode('.', [$this->schema_name, $this->table_name, $this->column_name]);
+    }
+
+    public function reference()
+    {
+        return implode('.', [$this->schema_name, $this->table_name, $this->column_name, $this->name]);
     }
 }
