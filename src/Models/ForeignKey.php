@@ -5,13 +5,14 @@ namespace Angujo\DBReader\Models;
 
 /**
  * Class ForeignKey
+ *
  * @package Angujo\DBReader\Models
  *
- * @property string   $table_schema
+ * @property string   $schema_name
  * @property string   $name
  * @property string   $table_name
  * @property string   $column_name
- * @property string   $foreign_table_schema
+ * @property string   $foreign_schema_name
  * @property string   $foreign_table_name
  * @property string   $foreign_column_name
  * @property string   $column_reference
@@ -64,12 +65,12 @@ class ForeignKey extends PropertyReader
 
     protected function schema()
     {
-        return Schema::get($this->table_schema);
+        return Schema::get($this->schema_name);
     }
 
     protected function foreign_schema()
     {
-        return Schema::get($this->foreign_table_schema);
+        return Schema::get($this->foreign_schema_name);
     }
 
     /**
@@ -77,25 +78,25 @@ class ForeignKey extends PropertyReader
      */
     protected function table()
     {
-        return Schema::getTable($this->table_schema, $this->table_name);
+        return Schema::getTable($this->schema_name, $this->table_name);
     }
 
     protected function foreign_table()
     {
-        return Schema::getTable($this->foreign_table_schema, $this->foreign_table_name);
+        return Schema::getTable($this->foreign_schema_name, $this->foreign_table_name);
     }
 
     protected function column()
     {
-        return Schema::getColumn($this->table_schema, $this->table_name, $this->column_name);
+        return Schema::getColumn($this->schema_name, $this->table_name, $this->column_name);
     }
 
     protected function foreign_column()
     {
-        return Schema::getColumn($this->foreign_table_schema, $this->foreign_table_name, $this->foreign_column_name);
+        return Schema::getColumn($this->foreign_schema_name, $this->foreign_table_name, $this->foreign_column_name);
     }
 
-    protected function column_reference() { return $this->table_schema.'.'.$this->table_name.'.'.$this->column_name; }
+    protected function column_reference() { return $this->schema_name.'.'.$this->table_name.'.'.$this->column_name; }
 
-    protected function table_reference() { return $this->table_schema.'.'.$this->table_name; }
+    protected function table_reference() { return $this->schema_name.'.'.$this->table_name; }
 }

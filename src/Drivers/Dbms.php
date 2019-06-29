@@ -56,7 +56,7 @@ abstract class Dbms implements DbmsInterface
 
     protected function mapForeignKeys(array $keys)
     {
-        return array_combine(array_map(function (ForeignKey $foreignKey) { return implode('.', [$foreignKey->table_schema, $foreignKey->table_name, $foreignKey->name]); }, $keys), $keys);
+        return array_combine(array_map(function (ForeignKey $foreignKey) { return implode('.', [$foreignKey->schema_name, $foreignKey->table_name, $foreignKey->name]); }, $keys), $keys);
     }
 
     public function changeDatabase($db_name)
