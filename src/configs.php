@@ -11,8 +11,8 @@ return [
 
     'dbms' => 'postgres',
     'host' => 'localhost',
-    'port' => '5434',
-    'database' => 'test',
+    'port' => '5432',
+    'database' => 'indicatoredc',
     'username' => 'postgres',
     'password' => 'postgres',
 

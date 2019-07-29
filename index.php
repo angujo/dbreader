@@ -9,11 +9,11 @@ use Angujo\DBReader\Models\Schema;
 //echo '<pre>';
 $db = Connection::currentDatabase();
 
-//print_r($db);
+print_r($db->schemas);
 
-print_r(array_map(function(Schema $schema){
+/*print_r(array_map(function(Schema $schema){
     return $schema->foreign_keys;
-}, $db->schemas));
+}, $db->schemas));*/
 
 /*print_r($db->tables->take(5)->map(function (DBTable $table) {
     return $table->columns;
