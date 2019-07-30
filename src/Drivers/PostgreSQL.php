@@ -327,7 +327,7 @@ class PostgreSQL extends Dbms
 
     protected function switchSchema($schema)
     {
-        if (!is_string($schema) || 0 === strcasecmp($this->_schema, $schema)) {
+        if (empty($schema) || !is_string($schema) || 0 === strcasecmp($this->_schema, $schema)) {
             return;
         }
         $this->connection->exec("SET search_path TO \"$schema\"");
