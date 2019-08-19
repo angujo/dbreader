@@ -140,7 +140,7 @@ class DataType
     public function phpName()
     {
         //if ($this->isDateTime && class_exists('Carbon\Carbon')) return 'Carbon';
-        if ($this->isDateTime) return 'Carbon';
+        if ($this->isDateTime || $this->isDate) return 'Carbon';
         if ($this->isPhpinteger) return 'integer';
         if ($this->isPhpfloat) return 'float';
         if ($this->isPhpboolean) return 'bool';
