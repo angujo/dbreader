@@ -18,6 +18,7 @@ class SchemaTest extends \PHPUnit\Framework\TestCase
     private static $db;
     private        $schemas;
     private        $tables;
+    private        $fks;
     private $columns;
 
     public static function setUpBeforeClass()
@@ -37,7 +38,9 @@ class SchemaTest extends \PHPUnit\Framework\TestCase
 
     public function testGetTableForeignKeys()
     {
-
+        $tables=self::$db->getSchema('lookup')->tables;
+        $table=Schema::getTable('lookup','languages');
+        $this->fks = $table->foreign_keys;
     }
 
     public function testGetTableConstraints()

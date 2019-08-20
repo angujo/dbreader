@@ -38,7 +38,7 @@ class PostgreSQL extends Dbms
     'join pg_catalog.pg_namespace rn on rn.oid=rt.relnamespace join pg_catalog.pg_attribute ra on ra.attrelid=rt.oid and ra.attnum = any (c.confkey) '.
     'left join pg_catalog.pg_constraint uc on n.oid=uc.connamespace and a.attnum = any (uc.conkey) and t.oid=uc.conrelid and not uc.contype = any (array[\'u\'::character,\'p\'::character]) '.
     'where (c.contype =\'f\'::character)';
-    private static $tomany_foreign_queries = 'select rn.nspname schema_name, rt.relname table_name, ra.attname column_name, c.conname "name", n.nspname foreign_schema_name, t.relname foreign_table_name, a.attname foreign_column_name '.
+    private static $tomany_foreign_queries = 'select distinct rn.nspname schema_name, rt.relname table_name, ra.attname column_name, c.conname "name", n.nspname foreign_schema_name, t.relname foreign_table_name, a.attname foreign_column_name '.
     'from pg_catalog.pg_constraint c '.
     'join pg_catalog.pg_namespace n on n.oid=c.connamespace join pg_catalog.pg_class t on t.oid=c.conrelid join pg_catalog.pg_attribute a on a.attrelid=t.oid and a.attnum = any (c.conkey) '.
     'join pg_catalog.pg_class rt on rt.oid=c.confrelid join pg_catalog.pg_namespace rn on rn.oid=rt.relnamespace '.
@@ -98,7 +98,7 @@ class PostgreSQL extends Dbms
     {
         $this->switchSchema($schema);
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare(implode(' ', [self::$tomany_foreign_queries, 'AND n.nspname = :ts', 'AND t.relname = :tn',]));
+        $stmt = $this->connection->prepare(implode(' ', [self::$tomany_foreign_queries, 'AND rn.nspname = :ts', 'AND rt.relname = :tn',]));
         $stmt->execute([':ts' => $schema, ':tn' => $table_name,]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
@@ -107,8 +107,9 @@ class PostgreSQL extends Dbms
     {
         $this->switchSchema($schema);
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare(implode(' ', [self::$tomany_foreign_queries, 'AND n.nspname = :ts',]));
+        $stmt = $this->connection->prepare(implode(' ', [self::$tomany_foreign_queries, 'AND rn.nspname = :ts',]));
         $stmt->execute([':ts' => $schema,]);
+        //$fq=$stmt->_debugQuery(true);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
@@ -166,7 +167,7 @@ class PostgreSQL extends Dbms
         $stmt = $this->connection->prepare(implode(' ', [self::$tables_query, 'WHERE schemaname = :ts']));
         $stmt->execute([':ts' => $schema]);
         $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        // echo $stmt->_debugQuery(true),"\n";
+        //$fq= $stmt->_debugQuery(true);
         return $this->mapTables(array_map(function($details){
             return new DBTable(array_merge(['db_name' => $this->currentDatabase(true)], $details), true);
         }, $data));
