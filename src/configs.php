@@ -12,7 +12,7 @@ return [
     'dbms' => 'postgres',
     'host' => 'localhost',
     'port' => '5432',
-    'database' => 'indicatoredc',
+    'database' => 'indicator',
     'username' => 'postgres',
     'password' => 'postgres',
 

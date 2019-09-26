@@ -91,7 +91,9 @@ class DataType
     {
         $this->type_names = array_map(function ($v) { return $this->extract($v); }, Helper::array_flatten($types));
         foreach ($this->type_names as $type_name) {
-            if (null !== $this->group && 0 !== strcasecmp($this->groupName($type_name), $this->group)) throw new ReaderException('Invalid type and alias: ' . implode(', ', $this->type_names), 406);
+            if (null !== $this->group && 0 !== strcasecmp($this->groupName($type_name), $this->group)) {
+                throw new ReaderException('Invalid type and alias: '.implode(', ', $this->type_names), 406);
+            }
             $this->group = $this->groupName($type_name);
         }
     }
@@ -103,8 +105,12 @@ class DataType
      */
     public function __get($name)
     {
-        if (0 !== stripos($name, 'is')) throw new ReaderException('Invalid data type query: ' . $name, 406);
-        if (0 === stripos($name, 'isphp')) return $this->groupName($this->removeQuiz($name));
+        if (0 !== stripos($name, 'is')) {
+            throw new ReaderException('Invalid data type query: '.$name, 406);
+        }
+        if (0 === stripos($name, 'isphp')) {
+            return $this->groupName($this->removeQuiz($name));
+        }
         return 0 === strcasecmp($this->groupName($this->removeQuiz($name)), $this->group);
     }
 
@@ -140,11 +146,21 @@ class DataType
     public function phpName()
     {
         //if ($this->isDateTime && class_exists('Carbon\Carbon')) return 'Carbon';
-        if ($this->isDateTime || $this->isDate) return 'Carbon';
-        if ($this->isPhpinteger) return 'integer';
-        if ($this->isPhpfloat) return 'float';
-        if ($this->isPhpboolean) return 'bool';
-        if ($this->isPhpstring) return 'string';
+        if ($this->isDateTime || $this->isDate) {
+            return 'Carbon';
+        }
+        if ($this->isPhpinteger) {
+            return 'integer';
+        }
+        if ($this->isPhpfloat) {
+            return 'float';
+        }
+        if ($this->isPhpboolean) {
+            return 'bool';
+        }
+        if ($this->isPhpstring) {
+            return 'string';
+        }
         return 'mixed';
     }
 
@@ -160,7 +176,9 @@ class DataType
     protected function groupName($type)
     {
         $type = explode(' ', strtolower(trim($type)));
-        if (count($type) == 2 && 0 === strcasecmp('unsigned', $type[1])) $type = [$type[0]];
+        if (count($type) == 2 && 0 === strcasecmp('unsigned', $type[1])) {
+            $type = [$type[0]];
+        }
         $type = implode(' ', $type);
         switch ($type) {
             case 'boolean':
@@ -205,11 +223,13 @@ class DataType
                 return 'bigint';
             case 'timestamp':
             case 'datetime':
-            case 'timestamptz':
                 return 'timestamp';
+            case 'timestamptz':
+                return 'timestamptz';
             case 'time':
-            case 'timetz':
                 return 'time';
+            case 'timetz':
+                return 'timetz';
             case 'macaddr':
             case 'macaddr8':
                 return 'macaddr';
