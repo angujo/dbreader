@@ -253,6 +253,7 @@ class PostgreSQL extends Dbms
     public function getColumns($schema, $table_name = null)
     {
         $data = $table_name ? $this->tableColumns($schema, $table_name) : $this->schemaColumns($schema);
+        usort($data,function ($f,$s){return $f['ordinal']<=>$s['ordinal'];});
         return $this->mapColumns(array_map(function($details){ return new DBColumn($details); }, $data));
     }
 
