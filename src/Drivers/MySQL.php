@@ -6,6 +6,8 @@ namespace Angujo\DBReader\Drivers;
 
 use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
+use Angujo\DBReader\Models\DBConstraint;
+use Angujo\DBReader\Models\DBIndex;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
 
@@ -128,5 +130,28 @@ class MySQL extends Dbms
     {
         $this->current_db = $this->current_db ?: new Database($this->connection->query('SELECT database();')->fetchColumn());
         return true === $name && $this->current_db ? $this->current_db->name : $this->current_db;
+    }
+
+    /**
+     * Get Constraints
+     *
+     * @param string      $schema
+     * @param string|null $table_name
+     *
+     * @return DBConstraint[]
+     */
+    public function getConstraints($schema, $table_name = null)
+    {
+        // TODO: Implement getConstraints() method.
+    }
+
+    /**
+     * @param string      $schema
+     * @param null|string $table_name
+     * @return DBIndex[]
+     */
+    public function getIndices($schema, $table_name = null)
+    {
+        // TODO: Implement getIndices() method.
     }
 }

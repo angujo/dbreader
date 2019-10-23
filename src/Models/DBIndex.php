@@ -1,41 +1,37 @@
 <?php
-
+/**
+ * Created for dbreader.
+ * User: Angujo Barrack
+ * Date: 2019-10-23
+ * Time: 3:58 AM
+ */
 
 namespace Angujo\DBReader\Models;
 
-
 /**
- * Class DBConstraint
- *
+ * Class DBIndex
  * @package Angujo\DBReader\Models
  *
- * @property string   $name
- * @property string   $schema_name
- * @property string   $check_source
- * @property string   $table_name
- * @property string   $column_name
+ * @property string $schema_name
+ * @property string $table_name
+ * @property string $name
+ * @property string $column_name
+ * @property string $is_primary
+ * @property string $is_unique
  * @property string   $table_reference
  * @property string   $column_reference
  * @property string   $reference
- * @property boolean  $is_primary_key
- * @property boolean  $is_unique_key
- * @property boolean  $is_foreign_key
- * @property boolean  $is_check
- *
- * @property DBTable  $table
- * @property Schema   $schema
- * @property DBColumn $column
  */
-class DBConstraint extends PropertyReader
+class DBIndex extends PropertyReader
 {
     public function __construct(array $details)
     {
         parent::__construct($details);
     }
 
-    protected function table()
+    protected function database()
     {
-        return Schema::getTable($this->schema_name, $this->table_name);
+        return Schema::get($this->schema_name)->database;
     }
 
     protected function schema()
@@ -43,9 +39,9 @@ class DBConstraint extends PropertyReader
         return Schema::get($this->schema_name);
     }
 
-    protected function column()
+    protected function table()
     {
-        return $this->table->getColumn($this->column_name);
+        return Schema::getTable($this->schema_name, $this->table_name);
     }
 
     public function table_reference()

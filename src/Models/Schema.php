@@ -19,6 +19,7 @@ use Angujo\DBReader\Drivers\ReaderException;
  * @property Database       $database
  * @property ForeignKey[]   $foreign_keys
  * @property DBConstraint[] $constraints
+ * @property DBIndex[] $indices
  */
 class Schema extends PropertyReader
 {
@@ -44,6 +45,11 @@ class Schema extends PropertyReader
         return Connection::getConstraints($this->name);
     }
 
+    protected function indices()
+    {
+        return Connection::getIndices($this->name);
+    }
+
     /**
      * @return DBColumn[]
      */
@@ -65,6 +71,11 @@ class Schema extends PropertyReader
     public function getTableConstraints(DBTable $table)
     {
         return array_filter($this->constraints, function(DBConstraint $constraint) use ($table){ return 0 === strcasecmp($table->reference, $constraint->table_reference); });
+    }
+
+    public function getTableIndices(DBTable $table)
+    {
+        return array_filter($this->indices, function(DBIndex $index) use ($table){ return 0 === strcasecmp($table->reference, $index->table_reference); });
     }
 
     /**

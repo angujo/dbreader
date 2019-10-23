@@ -7,6 +7,7 @@ namespace Angujo\DBReader\Drivers;
 use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
 use Angujo\DBReader\Models\DBConstraint;
+use Angujo\DBReader\Models\DBIndex;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
 use Angujo\DBReader\Models\Schema;
@@ -26,11 +27,11 @@ class PostgreSQL extends Dbms
     'left join pg_catalog.pg_type st on pg_get_serial_sequence(t.relname,c.attname)=n.nspname||\'.\'||st.typname '.
     'where not c.attisdropped and NOT pg_is_other_temp_schema(n.oid) AND c.attnum > 0 AND '.
     '(t.relkind = ANY (ARRAY[\'r\'::"char", \'v\'::"char", \'f\'::"char", \'p\'::"char"]))';
-    private static $constraints_query      = 'select n.nspname schema_name, t.relname table_name, a.attname column_name, c.conname "name", '.
-    '\'f\'::character=c.contype is_foreign_key, \'u\'::character=c.contype is_unique_key, \'p\'::character=c.contype is_primary_key '.
+    private static $constraints_query      = 'select n.nspname schema_name, t.relname table_name, a.attname column_name, c.conname "name", c.consrc check_source, '.
+    '\'f\'::character=c.contype is_foreign_key, \'u\'::character=c.contype is_unique_key, \'p\'::character=c.contype is_primary_key ,\'c\'::character=c.contype is_check'.
     'from pg_catalog.pg_constraint c join pg_catalog.pg_namespace n on n.oid=c.connamespace join pg_catalog.pg_class t on t.oid=conrelid '.
     'join pg_catalog.pg_attribute a on a.attrelid=t.oid and (a.attnum = any (c.conkey)) '.
-    'where (c.contype = any (array[\'p\'::character, \'u\'::character]))';
+    'where (c.contype = any (array[\'p\'::character, \'u\'::character, \'c\'::character]))';
     private static $toone_foreign_queries  = 'select a.ordinal, n.nspname schema_name, t.relname table_name, a.attname column_name, c.conname "name", rn.nspname foreign_schema_name, rt.relname foreign_table_name, '.
     'ra.attname foreign_column_name '.
     'from pg_catalog.pg_constraint c join pg_catalog.pg_namespace n on n.oid=c.connamespace join pg_catalog.pg_class t on t.oid=c.conrelid '.
@@ -45,6 +46,9 @@ class PostgreSQL extends Dbms
     'join pg_catalog.pg_attribute ra on ra.attrelid=rt.oid and ra.attnum = any (c.confkey) '.
     'join pg_catalog.pg_constraint uc on rn.oid=uc.connamespace and ra.attnum = any (uc.conkey) and rt.oid=uc.conrelid and uc.contype = any (array[\'u\'::character,\'p\'::character]) '.
     'where (c.contype =\'f\'::character)';
+    private static $indices_query          = 'select n.nspname schema_name,  t.relname as table_name,  i.relname as "name",  a.attname as column_name,  ix.indisprimary is_primary,  ix.indisunique is_unique  '.
+    'from  pg_catalog.pg_class t,  pg_catalog.pg_namespace as n,  pg_class i,  pg_index ix,  pg_attribute a  '.
+    'where  t.relnamespace=n.oid  and t.oid = ix.indrelid  and i.oid = ix.indexrelid  and a.attrelid = t.oid  and a.attnum = ANY(ix.indkey)  and t.relkind = \'r\' ';
 
     /**
      * One to One
@@ -141,6 +145,30 @@ class PostgreSQL extends Dbms
         $this->switchSchema($schema);
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare(implode(' ', [self::$constraints_query, 'AND n.nspname = :ts', 'AND t.relname = :tn']));
+        $stmt->execute([':ts' => $schema, ':tn' => $table_name]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public function getIndices($schema, $table_name = null)
+    {
+        $data = $table_name ? $this->tableIndices($schema, $table_name) : $this->schemaIndices($schema);
+        return array_map(function ($d) { return new DBIndex($d); }, $data);
+    }
+
+    private function schemaIndices($schema)
+    {
+        $this->switchSchema($schema);
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$indices_query, 'AND n.nspname = :ts',]));
+        $stmt->execute([':ts' => $schema,]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    private function tableIndices($schema, $table_name)
+    {
+        $this->switchSchema($schema);
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare(implode(' ', [self::$indices_query, 'AND n.nspname = :ts', 'AND t.relname = :tn']));
         $stmt->execute([':ts' => $schema, ':tn' => $table_name]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }

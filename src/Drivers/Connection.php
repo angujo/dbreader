@@ -7,6 +7,7 @@ namespace Angujo\DBReader\Drivers;
 use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
 use Angujo\DBReader\Models\DBConstraint;
+use Angujo\DBReader\Models\DBIndex;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
 use Angujo\DBReader\Models\Schema;
@@ -24,6 +25,7 @@ use Angujo\DBReader\Models\Schema;
  * @method static ForeignKey[] getReferencedForeignKeys($table_name, $schema_name = null);
  * @method static ForeignKey[] getReferencingForeignKeys($table_name, $schema_name = null);
  * @method static DBConstraint[] getConstraints($schema_name, $table_name = null);
+ * @method static DBIndex[] getIndices($schema_name, $table_name = null);
  */
 class Connection
 {

@@ -11,21 +11,21 @@ use Angujo\DBReader\Drivers\ReaderException;
  *
  * @package Angujo\DBReader\Models
  *
- * @property string       $schema_name
- * @property string       $name
- * @property string       $db_name
- * @property string       $reference
- * @property boolean      $is_table
- * @property boolean      $is_view
+ * @property string         $schema_name
+ * @property string         $name
+ * @property string         $db_name
+ * @property string         $reference
+ * @property boolean        $is_table
+ * @property boolean        $is_view
  *
- * @property Database     $database
- * @property Schema       $schema
- * @property ForeignKey[] $foreign_keys
- * @property ForeignKey[] $foreign_keys_one_to_one
- * @property ForeignKey[] $foreign_keys_one_to_many
- * @property DBColumn[]   $columns
- * @property DBColumn[]   $primary_columns
- * @property DBConstraint[]   $constraints
+ * @property Database       $database
+ * @property Schema         $schema
+ * @property ForeignKey[]   $foreign_keys
+ * @property ForeignKey[]   $foreign_keys_one_to_one
+ * @property ForeignKey[]   $foreign_keys_one_to_many
+ * @property DBColumn[]     $columns
+ * @property DBColumn[]     $primary_columns
+ * @property DBConstraint[] $constraints
  */
 class DBTable extends PropertyReader
 {
@@ -37,7 +37,7 @@ class DBTable extends PropertyReader
 
     protected function primary_columns()
     {
-        return array_filter($this->columns(), function(DBColumn $column){ return $column->is_primary; });
+        return array_filter($this->columns(), function (DBColumn $column) { return $column->is_primary; });
     }
 
     protected function database()
@@ -55,12 +55,17 @@ class DBTable extends PropertyReader
         return $this->schema->getTableConstraints($this);
     }
 
+    protected function indices()
+    {
+        return $this->schema->getTableIndices($this);
+    }
+
     /**
      * @return ForeignKey[]
      */
     protected function foreign_keys_one_to_one()
     {
-        return array_filter($this->foreign_keys, function(ForeignKey $foreignKey){ return $foreignKey->isOneToOne(); });
+        return array_filter($this->foreign_keys, function (ForeignKey $foreignKey) { return $foreignKey->isOneToOne(); });
     }
 
     /**
@@ -76,12 +81,12 @@ class DBTable extends PropertyReader
      */
     protected function foreign_keys_one_to_many()
     {
-        return array_filter($this->foreign_keys, function(ForeignKey $foreignKey){ return $foreignKey->isOneToMany(); });
+        return array_filter($this->foreign_keys, function (ForeignKey $foreignKey) { return $foreignKey->isOneToMany(); });
     }
 
     protected function columns()
     {
-        return array_filter($this->schema->columns, function(DBColumn $column){
+        return array_filter($this->schema->columns, function (DBColumn $column) {
             return 0 === strcasecmp($this->schema_name, $column->schema_name) && 0 === strcasecmp($this->name, $column->table_name);
         });
     }
@@ -108,7 +113,7 @@ class DBTable extends PropertyReader
      */
     public function getColumn($name)
     {
-        return count($cols = array_filter($this->columns, function(DBColumn $column) use ($name){ return 0 === strcasecmp($name, $column->name); })) ? array_shift($cols) : null;
+        return count($cols = array_filter($this->columns, function (DBColumn $column) use ($name) { return 0 === strcasecmp($name, $column->name); })) ? array_shift($cols) : null;
     }
 
     /**
@@ -118,6 +123,6 @@ class DBTable extends PropertyReader
      */
     public function getForeignKey($name)
     {
-        return count($keys = array_filter($this->foreign_keys, function(ForeignKey $foreignKey) use ($name){ return 0 === strcasecmp($name, $foreignKey->name); })) ? array_shift($keys) : null;
+        return count($keys = array_filter($this->foreign_keys, function (ForeignKey $foreignKey) use ($name) { return 0 === strcasecmp($name, $foreignKey->name); })) ? array_shift($keys) : null;
     }
 }
