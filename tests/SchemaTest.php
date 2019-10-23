@@ -20,6 +20,7 @@ class SchemaTest extends \PHPUnit\Framework\TestCase
     private        $tables;
     private        $fks;
     private $columns;
+    private $indices;
 
     public static function setUpBeforeClass()
     {
@@ -51,6 +52,11 @@ class SchemaTest extends \PHPUnit\Framework\TestCase
     public function testGetColumns()
     {
 $this->columns=self::$db->getSchema('log')->columns;
+    }
+
+    public function testGetIndices()
+    {
+        $this->indices=self::$db->getSchema('public')->indices;
     }
 
     public function testGetColumnForeignKeys()
