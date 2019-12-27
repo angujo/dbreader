@@ -107,6 +107,8 @@ class PostgreSQL extends Dbms
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare(implode(' ', [self::$tomany_foreign_queries, 'AND rn.nspname = :ts', 'AND rt.relname = :tn',]));
         $stmt->execute([':ts' => $schema, ':tn' => $table_name,]);
+        $fq=$stmt->_debugQuery(true);
+        echo "$fq\n";
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
@@ -116,7 +118,8 @@ class PostgreSQL extends Dbms
         /** @var DBRPDO_Statement $stmt */
         $stmt = $this->connection->prepare(implode(' ', [self::$tomany_foreign_queries, 'AND rn.nspname = :ts',]));
         $stmt->execute([':ts' => $schema,]);
-        //$fq=$stmt->_debugQuery(true);
+        $fq=$stmt->_debugQuery(true);
+        echo "$fq\n";
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
