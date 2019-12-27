@@ -32,14 +32,14 @@ class PostgreSQL extends Dbms
     'from pg_catalog.pg_constraint c join pg_catalog.pg_namespace n on n.oid=c.connamespace join pg_catalog.pg_class t on t.oid=conrelid '.
     'join pg_catalog.pg_attribute a on a.attrelid=t.oid and (a.attnum = any (c.conkey)) '.
     'where (c.contype = any (array[\'p\'::character, \'u\'::character, \'c\'::character]))';
-    private static $toone_foreign_queries = 'select a.ordinal, n.nspname schema_name, t.relname table_name, a.attname column_name, c.conname "name", rn.nspname foreign_schema_name, rt.relname foreign_table_name, '.
+    private static $toone_foreign_queries = 'select a.attnum ordinal, n.nspname schema_name, t.relname table_name, a.attname column_name, c.conname "name", rn.nspname foreign_schema_name, rt.relname foreign_table_name, '.
     'ra.attname foreign_column_name '.
     'from pg_catalog.pg_constraint c join pg_catalog.pg_namespace n on n.oid=c.connamespace join pg_catalog.pg_class t on t.oid=c.conrelid '.
     'join pg_catalog.pg_attribute a on a.attrelid=t.oid and a.attnum = any (c.conkey) join pg_catalog.pg_class rt on rt.oid=c.confrelid '.
     'join pg_catalog.pg_namespace rn on rn.oid=rt.relnamespace join pg_catalog.pg_attribute ra on ra.attrelid=rt.oid and ra.attnum = any (c.confkey) '.
     'left join pg_catalog.pg_constraint uc on n.oid=uc.connamespace and a.attnum = any (uc.conkey) and t.oid=uc.conrelid and not uc.contype = any (array[\'u\'::character,\'p\'::character]) '.
     'where (c.contype =\'f\'::character)';
-    private static $tomany_foreign_queries = 'select distinct ra.ordinal, rn.nspname schema_name, rt.relname table_name, ra.attname column_name, c.conname "name", '.
+    private static $tomany_foreign_queries = 'select distinct ra.attnum ordinal, rn.nspname schema_name, rt.relname table_name, ra.attname column_name, c.conname "name", '.
     'n.nspname foreign_schema_name, t.relname foreign_table_name, a.attname foreign_column_name '.
     'from pg_catalog.pg_constraint c '.
     'join pg_catalog.pg_namespace n on n.oid=c.connamespace join pg_catalog.pg_class t on t.oid=c.conrelid join pg_catalog.pg_attribute a on a.attrelid=t.oid and a.attnum = any (c.conkey) '.
