@@ -33,6 +33,8 @@ use Angujo\DBReader\Drivers\ReaderException;
  * @property Schema                 $schema
  * @property ForeignKey[]           $foreign_keys
  * @property ForeignKey             $foreign_key
+ * @property DBConstraint[]         $unique_constraints
+ * @property DBConstraint|null      $unique_constraint
  */
 class DBColumn extends PropertyReader
 {
@@ -88,6 +90,16 @@ class DBColumn extends PropertyReader
 
     protected function is_unique()
     {
-        return count(array_filter($this->table->constraints, function(DBConstraint $constraint){ return $constraint->is_unique_key && 0 === strcasecmp($this->reference, $constraint->column_reference); })) > 0;
+        return count($this->unique_constraints) > 0;
+    }
+
+    protected function unique_constraint()
+    {
+        return $this->is_unique ? current($this->unique_constraints) : null;
+    }
+
+    protected function unique_constraints()
+    {
+        return array_filter($this->table->constraints, function(DBConstraint $constraint){ return $constraint->is_unique_key && 0 === strcasecmp($this->reference, $constraint->column_reference); });
     }
 }
