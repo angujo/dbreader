@@ -236,6 +236,9 @@ class DataType
             case 'varchar':
             case 'character varying':
                 return 'varchar';
+            case 'json':
+            case 'jsonb':
+                return 'json';
             case 'varbit':
             case 'bit':
             case 'box':
@@ -245,8 +248,6 @@ class DataType
             case 'date':
             case 'inet':
             case 'interval':
-            case 'json':
-            case 'jsonb':
             case 'line':
             case 'lseg':
             case 'path':
