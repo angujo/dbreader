@@ -135,30 +135,6 @@ class PostgreSQL extends Dbms
         return $this->mergeConstraints(array_map(function($d){ return new DBConstraint($d); }, $data));
     }
 
-    /**
-     * Constraints can have more than one column.
-     * We need to ensure the columns are merged to one constraint
-     *
-     * @param DBConstraint[] $constraints
-     *
-     * @return DBConstraint[]
-     */
-    private function mergeConstraints($constraints)
-    {
-        /** @var DBConstraint[] $tmp */
-        $tmp = [];
-        foreach ($constraints as $constraint) {
-            if (isset($tmp[$constraint->name])) {
-                foreach ($tmp[$constraint->name] as $_constraint) {
-                    /** @var DBConstraint $_constraint */
-                    $_constraint->addColumnName($constraint->column_name);
-                    $constraint->addColumnName($_constraint->column_name);
-                }
-            }
-            $tmp[$constraint->name][] = $constraint;
-        }
-        return $tmp;
-    }
 
     private function schemaConstraints($schema)
     {

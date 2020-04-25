@@ -14,14 +14,15 @@ namespace Angujo\DBReader\Models;
  * @property string     $check_source
  * @property string     $table_name
  * @property string     $column_name
- * @property string     $table_reference
- * @property string     $column_reference
- * @property string[]   $column_references
- * @property string     $reference
  * @property boolean    $is_primary_key
  * @property boolean    $is_unique_key
  * @property boolean    $is_foreign_key
  * @property boolean    $is_check
+ *
+ * @property string     $table_reference
+ * @property string     $column_reference
+ * @property string[]   $column_references
+ * @property string     $reference
  * @property boolean    $has_multiple_columns
  *
  * @property DBTable    $table

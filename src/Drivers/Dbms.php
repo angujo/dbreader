@@ -6,6 +6,7 @@ namespace Angujo\DBReader\Drivers;
 
 use Angujo\DBReader\Models\Database;
 use Angujo\DBReader\Models\DBColumn;
+use Angujo\DBReader\Models\DBConstraint;
 use Angujo\DBReader\Models\DBTable;
 use Angujo\DBReader\Models\ForeignKey;
 use Angujo\DBReader\Models\Schema;
@@ -46,17 +47,42 @@ abstract class Dbms implements DbmsInterface
 
     protected function mapTables(array $tables)
     {
-        return array_combine(array_map(function(DBTable $table){ return $table->schema_name.'.'.$table->name; }, $tables), $tables);
+        return array_combine(array_map(function (DBTable $table) { return $table->schema_name.'.'.$table->name; }, $tables), $tables);
     }
 
     protected function mapColumns(array $columns)
     {
-        return array_combine(array_map(function(DBColumn $column){ return implode('.', [$column->schema_name, $column->table_name, $column->name]); }, $columns), $columns);
+        return array_combine(array_map(function (DBColumn $column) { return implode('.', [$column->schema_name, $column->table_name, $column->name]); }, $columns), $columns);
     }
 
     protected function mapForeignKeys(array $keys)
     {
-        return array_combine(array_map(function(ForeignKey $foreignKey){ return implode('.', [$foreignKey->schema_name, $foreignKey->table_name, $foreignKey->name]); }, $keys), $keys);
+        return array_combine(array_map(function (ForeignKey $foreignKey) { return implode('.', [$foreignKey->schema_name, $foreignKey->table_name, $foreignKey->name]); }, $keys), $keys);
+    }
+
+    /**
+     * Constraints can have more than one column.
+     * We need to ensure the columns are merged to one constraint
+     *
+     * @param DBConstraint[] $constraints
+     *
+     * @return DBConstraint[]
+     */
+    protected function mergeConstraints($constraints)
+    {
+        /** @var DBConstraint[] $tmp */
+        $tmp = [];
+        foreach ($constraints as $constraint) {
+            if (isset($tmp[$constraint->name])) {
+                foreach ($tmp[$constraint->name] as $_constraint) {
+                    /** @var DBConstraint $_constraint */
+                    $_constraint->addColumnName($constraint->column_name);
+                    $constraint->addColumnName($_constraint->column_name);
+                }
+            }
+            $tmp[$constraint->name][] = $constraint;
+        }
+        return $tmp;
     }
 
     public function changeDatabase($db_name)

@@ -142,7 +142,15 @@ class MySQL extends Dbms
      */
     public function getConstraints($schema, $table_name = null)
     {
-        // TODO: Implement getConstraints() method.
+        $params = ['ts' => $schema ?: $this->currentDatabase(true),];
+        if (is_string($table_name)) {
+            $params['tn'] = $table_name;
+        }
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare('select tc.CONSTRAINT_NAME name, tc.TABLE_SCHEMA schema_name, null check_source, tc.table_name, kcu.column_name, \'PRIMARY KEY\'=tc.CONSTRAINT_TYPE is_primary_key, \'UNIQUE\'=tc.CONSTRAINT_TYPE is_unique_key, \'FOREIGN KEY\'=tc.CONSTRAINT_TYPE is_foreign_key from information_schema.KEY_COLUMN_USAGE kcu join information_schema.TABLE_CONSTRAINTS tc on tc.TABLE_SCHEMA =kcu.TABLE_SCHEMA and tc.TABLE_NAME =kcu.TABLE_NAME and tc.CONSTRAINT_NAME =kcu.CONSTRAINT_NAME '.
+            'where tc.TABLE_SCHEMA=:ts '.(is_string($table_name) ? ' and tc.TABLE_NAME = :tn' : ''));
+        $stmt->execute($params);
+        return $this->mergeConstraints(array_map(function ($details) { return new DBConstraint($details); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
     /**
@@ -152,6 +160,14 @@ class MySQL extends Dbms
      */
     public function getIndices($schema, $table_name = null)
     {
-        // TODO: Implement getIndices() method.
+        $params = ['ts' => $schema ?: $this->currentDatabase(true),];
+        if (is_string($table_name)) {
+            $params['tn'] = $table_name;
+        }
+        /** @var DBRPDO_Statement $stmt */
+        $stmt = $this->connection->prepare('select s.TABLE_SCHEMA schema_name, s.TABLE_NAME table_name, s.INDEX_NAME name, s.column_name, \'PRIMARY KEY\'=tc.CONSTRAINT_TYPE is_primary, s.NON_UNIQUE=0 is_unique from information_schema.STATISTICS s join information_schema.KEY_COLUMN_USAGE kcu on kcu.COLUMN_NAME =s.COLUMN_NAME and kcu.TABLE_NAME =s.TABLE_NAME and kcu.TABLE_SCHEMA =s.TABLE_SCHEMA join information_schema.TABLE_CONSTRAINTS tc on kcu.CONSTRAINT_NAME =tc.CONSTRAINT_NAME and kcu.TABLE_NAME =tc.TABLE_NAME  and kcu.TABLE_SCHEMA =tc.TABLE_SCHEMA '.
+            'where s.TABLE_SCHEMA=:ts '.(is_string($table_name) ? ' and s.TABLE_NAME = :tn' : ''));
+        $stmt->execute($params);
+        return array_map(function ($details) { return new DBIndex($details); }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 }

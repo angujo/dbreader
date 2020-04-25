@@ -12,15 +12,20 @@ namespace Angujo\DBReader\Models;
  * Class DBIndex
  * @package Angujo\DBReader\Models
  *
- * @property string $schema_name
- * @property string $table_name
- * @property string $name
- * @property string $column_name
- * @property string $is_primary
- * @property string $is_unique
+ * @property string   $schema_name
+ * @property string   $table_name
+ * @property string   $name
+ * @property string   $column_name
+ * @property string   $is_primary
+ * @property string   $is_unique
+ *
  * @property string   $table_reference
  * @property string   $column_reference
  * @property string   $reference
+ *
+ * @property Database $database
+ * @property Schema   $schema
+ * @property DBTable  $table
  */
 class DBIndex extends PropertyReader
 {
