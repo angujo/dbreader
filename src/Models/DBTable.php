@@ -52,11 +52,17 @@ class DBTable extends PropertyReader
 
     protected function constraints()
     {
+        if (!$this->schema) {
+            return [];
+        }
         return $this->schema->getTableConstraints($this);
     }
 
     protected function indices()
     {
+        if (!$this->schema) {
+            return [];
+        }
         return $this->schema->getTableIndices($this);
     }
 
@@ -73,6 +79,9 @@ class DBTable extends PropertyReader
      */
     protected function foreign_keys()
     {
+        if (!$this->schema) {
+            return [];
+        }
         return $this->schema->getTableForeignKeys($this);
     }
 

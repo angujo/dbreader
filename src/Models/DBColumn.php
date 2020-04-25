@@ -19,12 +19,12 @@ use Angujo\DBReader\Drivers\ReaderException;
  * @property int                    $ordinal
  * @property string|double|int|null $default
  * @property boolean                $is_nullable
- * @property boolean                $is_unique
  * @property null|int               $length
  * @property string                 $comment
- *
- * @property boolean                $is_primary
  * @property boolean                $is_auto_increment
+ *
+ * @property boolean                $is_unique
+ * @property boolean                $is_primary
  * @property string                 $reference
  *
  * @property DataType               $type

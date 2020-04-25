@@ -73,16 +73,19 @@ abstract class Dbms implements DbmsInterface
         /** @var DBConstraint[] $tmp */
         $tmp = [];
         foreach ($constraints as $constraint) {
-            if (isset($tmp[$constraint->name])) {
-                foreach ($tmp[$constraint->name] as $_constraint) {
+            $ref = "{$constraint->table_reference}.{$constraint->name}";
+            if (isset($tmp[$ref])) {
+                foreach ($tmp[$ref] as $_constraint) {
                     /** @var DBConstraint $_constraint */
                     $_constraint->addColumnName($constraint->column_name);
                     $constraint->addColumnName($_constraint->column_name);
                 }
             }
-            $tmp[$constraint->name][] = $constraint;
+            $tmp[$ref][] = $constraint;
         }
-        return $tmp;
+        $return=[];
+        array_walk_recursive($tmp, function($a) use (&$return) { $return[] = $a; });
+        return $return;
     }
 
     public function changeDatabase($db_name)

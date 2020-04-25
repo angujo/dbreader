@@ -84,7 +84,7 @@ class MySQL extends Dbms
             $params['tn'] = $table_name;
         }
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare('select table_schema schema_name,data_type,table_name,column_name name,ordinal_position ordinal, column_default `default`, is_nullable,character_maximum_length length,column_comment `comment`  from information_schema.`COLUMNS` c '.
+        $stmt = $this->connection->prepare("select table_schema schema_name, extra regexp 'auto_increment' is_auto_increment,data_type,table_name,column_name name,ordinal_position ordinal, column_default `default`, is_nullable,character_maximum_length length,column_comment `comment`  from information_schema.`COLUMNS` c ".
             'where c.TABLE_SCHEMA=:ts '.(is_string($table_name) ? ' and c.TABLE_NAME = :tn' : ''));
         $stmt->execute($params);
         return $this->mapColumns(array_map(function ($details) { return new DBColumn($this->mapColumnsData($details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
