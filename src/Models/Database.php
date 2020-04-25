@@ -52,10 +52,13 @@ class Database extends PropertyReader
      *
      * @return null|Schema
      */
-    public function getSchema($name)
+    public function getSchema($name = null)
     {
-        $schemas = array_filter($this->schemas(), function(Schema $schema) use ($name){ return 0 === strcasecmp($schema->name, $name); });
-        return array_shift($schemas);
+        if (!$name) {
+            return current($this->schemas());
+        }
+        $schemas = array_filter($this->schemas(), function (Schema $schema) use ($name) { return 0 === strcasecmp($schema->name, $name); });
+        return current($schemas);
     }
 
     /**

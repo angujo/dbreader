@@ -19,8 +19,8 @@ class SchemaTest extends \PHPUnit\Framework\TestCase
     private        $schemas;
     private        $tables;
     private        $fks;
-    private $columns;
-    private $indices;
+    private        $columns;
+    private        $indices;
 
     public static function setUpBeforeClass()
     {
@@ -39,8 +39,8 @@ class SchemaTest extends \PHPUnit\Framework\TestCase
 
     public function testGetTableForeignKeys()
     {
-        $tables=self::$db->getSchema('lookup')->tables;
-        $table=Schema::getTable('lookup','languages');
+        $tables    = self::$db->getSchema('lookup')->tables;
+        $table     = Schema::getTable('lookup', 'languages');
         $this->fks = $table->foreign_keys;
     }
 
@@ -51,12 +51,13 @@ class SchemaTest extends \PHPUnit\Framework\TestCase
 
     public function testGetColumns()
     {
-$this->columns=self::$db->getSchema('log')->columns;
+        $this->columns = self::$db->getSchema('digger_admin')->columns;
     }
 
     public function testGetIndices()
     {
-        $this->indices=self::$db->getSchema('public')->indices;
+        $schema=self::$db->getSchema();
+        $this->indices = $schema->indices;
     }
 
     public function testGetColumnForeignKeys()
@@ -67,7 +68,7 @@ $this->columns=self::$db->getSchema('log')->columns;
     protected function tearDown()
     {
         //me
-        $r=2+1;
+        $r = 2 + 1;
     }
 
     public static function tearDownAfterClass()
