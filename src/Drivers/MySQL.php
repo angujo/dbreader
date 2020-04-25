@@ -21,7 +21,7 @@ class MySQL extends Dbms
     public function getTables($db)
     {
         /** @var DBRPDO_Statement $stmt */
-        $stmt = $this->connection->prepare('SELECT * FROM information_schema.TABLES t WHERE t.TABLE_SCHEMA= :db');
+        $stmt = $this->connection->prepare('SELECT TABLE_SCHEMA schema_name, TABLE_NAME name, TABLE_SCHEMA db_name FROM information_schema.TABLES t WHERE t.TABLE_SCHEMA= :db');
         $stmt->execute(['db' => $db ?: $this->currentDatabase(true)]);
         return $this->mapTables(array_map(function ($details) use ($db) { return new DBTable(array_merge(['db_name' => $this->currentDatabase(true)], $details)); }, $stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
